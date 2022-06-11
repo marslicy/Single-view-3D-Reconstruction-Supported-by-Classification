@@ -1,7 +1,8 @@
 from typing import Dict
 
-from model import Model
 from torch.utils.data import DataLoader
+
+from model import Model
 
 
 def train(
