@@ -5,3 +5,4 @@
 ### 11. 06
 
 - Initialized gitlab respository. (Chenyang Li)
+- Finished basic structures of *inference.py*, *model.py*, *visualization.py*. (Chenyang Li, Yihao Wang)
