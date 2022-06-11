@@ -32,3 +32,21 @@ def train(
                        'validate_every_n': print validation loss and validation accuracy every n iterations
     """
     pass
+
+
+def test(
+    model: Model, test_dataloader_view: DataLoader, test_dataloader_shape: DataLoader
+):
+    """
+    Test the model using both unseen view and unseen shape.
+
+    Args:
+        model (Model): The trained model.
+        test_dataloader_view (DataLoader): Provide test data whose shape was seen by the model,
+                                           but with new views.
+        test_dataloader_shape (DataLoader): Provide test data whose shape was not seen by the model.
+
+    Retruns:
+        tbd
+    """
+    pass
