@@ -1,0 +1,6 @@
+pythons=3.9
+black
+isort
+flake8
+pytorch
+pre-commit
