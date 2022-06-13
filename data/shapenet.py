@@ -27,7 +27,7 @@ class ShapeNet(torch.utils.data.Dataset):
         """
         super().__init__()
         assert split in [
-            "train_shape",
+            "train",
             "view_val",
             "shape_val",
             "view_test",
