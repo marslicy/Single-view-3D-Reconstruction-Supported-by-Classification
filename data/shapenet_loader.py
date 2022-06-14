@@ -33,8 +33,12 @@ class DataLoader:
         self.shape_num = shape_num
         # use this split to set shapenum
         self.split = self.dataset.split
-        if self.split != "train":
-            self.shape_num = 1
+        self.val_view = self.dataset.val_view
+        self.test_view = self.dataset.test_view
+        if self.split == "view_val":
+            self.shape_num = self.val_view
+        if self.split == "view_test":
+            self.shape_num = self.test_view
 
     def __iter__(self):
         def combine_batch_dicts(batch):
@@ -67,6 +71,8 @@ class DataLoader:
 
         batch = []
         terminate_num = 0
+        # implement different logic for the training and test/val
+        # if self.split in ["train", "shape_val, shape_test"]:
         for index in index_iterator:
             for i in range(self.shape_num - terminate_num):
                 batch.append(self.dataset[index])
@@ -78,6 +84,39 @@ class DataLoader:
                     yield batch_to_numpy(combine_batch_dicts(batch))
                     batch = []
             terminate_num = 0
+
+        # elif self.split == "view_val":
+        #    # the starting idx should be the end of training
+        #    start_idx = 24 - self.val_view - self.test_view
+        #    for index in index_iterator:
+        #        # the end index should be the startidx + length
+        #        end_idx = start_idx + self.shape_num - terminate_num
+        #        for i in range(start_idx, end_idx):
+        #            batch.append(self.dataset[index])
+        #            # TODO modify here to sample one index multiple times,
+        #            # should leave a mark about how many times (marked as terminate_num) the last item has been used,
+        #            # so that we will start the next batch with (shape_num - n) times the index
+        #            if len(batch) == self.batch_size:
+        #                terminate_num = i
+        #                yield batch_to_numpy(combine_batch_dicts(batch))
+        #                batch = []
+        #        terminate_num = 0
+
+        # elif self.split == "view_test":
+        #    start_idx = 24 - self.val_view  # the starting idx should be the end of training
+        #    for index in index_iterator:
+        #        # the end index should be the startidx + length
+        #        end_idx = start_idx + self.shape_num - terminate_num
+        #        for i in range(start_idx, end_idx):
+        #            batch.append(self.dataset[index])
+        #            # TODO modify here to sample one index multiple times,
+        #            # should leave a mark about how many times (marked as terminate_num) the last item has been used,
+        #            # so that we will start the next batch with (shape_num - n) times the index
+        #            if len(batch) == self.batch_size:
+        #                terminate_num = i
+        #                yield batch_to_numpy(combine_batch_dicts(batch))
+        #                batch = []
+        #        terminate_num = 0
 
         if len(batch) > 0 and not self.drop_last:
             yield batch_to_numpy(combine_batch_dicts(batch))

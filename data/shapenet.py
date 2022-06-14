@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import cv2
 import numpy as np
 import torch
 
@@ -39,6 +40,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         # TODO define the number of image in  view_val and view_test. The overall image of a shape is 24, therefore the remaining part will be assigned to train
         self.val_view = val_view
         self.test_view = test_view
+        self.train_num = 24 - val_view - test_view
 
     def __getitem__(self, index):
         """
@@ -53,6 +55,8 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         item_class = item.split("/")[0]
         # read voxels from binvox format on disk as 3d numpy arrays
         voxels = self.get_shape_voxels(item)
+
+        # implement the different geting logic here
 
         return {
             "class": np.random((1, 3, 128, 128)),
@@ -93,6 +97,39 @@ class ShapeNetDataset(torch.utils.data.Dataset):
             voxel = read_as_3d_array(fptr).astype(np.float32)
         return voxel
 
-    @staticmethod
-    def get_image_data(imageid):
-        pass
+    def get_image_data(self, shapenetid):
+
+        assert self.split in ["train", "shape_val", "shape_test"]
+        if self.split == "train":
+            idx = np.random.randint(0, self.train_num)
+        else:
+            idx = np.random.randint(0, 24)
+
+        img_idx = str(idx).zfill(2)
+        category_id, shape_id = shapenetid.split("/")
+        path = f"imgroot/{category_id}/{shape_id}/rendering/{img_idx}.png"
+
+        img = cv2.imread(path)
+        img = cv2.resize(img, (127, 127))
+        img = np.transpose(img, (2, 0, 1))
+
+        return img
+
+    def get_image_data_by_idx(self, shapenetid, idx):
+        # the index should be [0, split_length]
+
+        assert self.split in ["view_val", "view_test"]
+        if self.split == "view_val":
+            # index of view_val should be in [train_end , train_end + val_length]
+            img_idx = idx + self.train_num
+        else:
+            # index of view_val should be in [self.train_num + self.val_view , 24]
+            img_idx = idx + self.train_num + self.val_view
+
+        img_idx = str(idx).zfill(2)
+        category_id, shape_id = shapenetid.split("/")
+        path = f"imgroot/{category_id}/{shape_id}/rendering/{img_idx}.png"
+        img = cv2.imread(path)
+        img = cv2.resize(img, (127, 127))
+        img = np.transpose(img, (2, 0, 1))
+        return img
