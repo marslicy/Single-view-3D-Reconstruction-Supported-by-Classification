@@ -33,8 +33,15 @@ class ShapeNetDataset(torch.utils.data.Dataset):
             "shape_test",
         ]
 
-        # keep track of shapes based on split
-        self.items = Path(f"split/{split}.txt").read_text().splitlines()
+        # keep track of shapes based on split, while view_val and view_test uses train split
+        if split in ["train", "shape_val", "shape_test"]:
+            self.items = Path(f"split/{split}.txt").read_text().splitlines()
+        else:
+            self.items = Path("split/train.txt").read_text().splitlines()
+            if split == "view_test":
+                self.img_counter = ShapeNetDataset.idx_generator(test_view)
+            if split == "view_val":
+                self.img_counter = ShapeNetDataset.idx_generator(val_view)
 
         self.split = split  # split can be used in other places
         # TODO define the number of image in  view_val and view_test. The overall image of a shape is 24, therefore the remaining part will be assigned to train
@@ -58,15 +65,30 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         # implement the different geting logic here
 
+        if self.split in ["train", "shape_val", "shape_test"]:
+            enc_img = self.get_image_data(item)
+            cls_img = self.get_image_data(item)
+        elif self.split == "view_val":
+            idx = next(self.img_counter)
+            enc_img = self.get_image_by_idx(item, idx)
+            cls_img = self.get_image_by_idx(item, idx)
+
         return {
-            "class": np.random((1, 3, 128, 128)),
+            "class": cls_img,
             # we add an extra dimension as the channel axis, since pytorch 3d tensors are Batch x Channel x Depth x Height x Width
-            "encoder": np.random((1, 3, 128, 128)),
+            "encoder": enc_img,
             "GT": ShapeNetDataset.classes.index(item_class),
             "3D": voxels[np.newaxis, :, :, :],
             # label is 0 indexed position in sorted class list, e.g. 02691156 is label 0, 02828884 is label 1 and so on.
             "ID": item,
         }
+
+    @staticmethod
+    def idx_generator(length):
+        i = 0
+        while True:
+            yield i % length
+            i += 1
 
     def __len__(self):
         """
@@ -107,7 +129,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         img_idx = str(idx).zfill(2)
         category_id, shape_id = shapenetid.split("/")
-        path = f"imgroot/{category_id}/{shape_id}/rendering/{img_idx}.png"
+        path = f"{imgroot}/{category_id}/{shape_id}/rendering/{img_idx}.png"
 
         img = cv2.imread(path)
         img = cv2.resize(img, (127, 127))
@@ -115,7 +137,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         return img
 
-    def get_image_data_by_idx(self, shapenetid, idx):
+    def get_image_by_idx(self, shapenetid, idx):
         # the index should be [0, split_length]
 
         assert self.split in ["view_val", "view_test"]
@@ -128,7 +150,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         img_idx = str(idx).zfill(2)
         category_id, shape_id = shapenetid.split("/")
-        path = f"imgroot/{category_id}/{shape_id}/rendering/{img_idx}.png"
+        path = f"{imgroot}/{category_id}/{shape_id}/rendering/{img_idx}.png"
         img = cv2.imread(path)
         img = cv2.resize(img, (127, 127))
         img = np.transpose(img, (2, 0, 1))
