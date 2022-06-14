@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 
 import numpy as np
@@ -9,7 +8,7 @@ from configs.path import imgroot, voxroot
 from split.binvox_rw import read_as_3d_array
 
 
-class ShapeNet(torch.utils.data.Dataset):
+class ShapeNetDataset(torch.utils.data.Dataset):
     """
     Dataset for loading ShapeNet Voxels from disk
     """
@@ -19,9 +18,8 @@ class ShapeNet(torch.utils.data.Dataset):
     img_path = imgroot
     class_name_mapping = json.loads(Path("split/shape_info.json").read_text())
     classes = sorted(class_name_mapping.keys())
-    print(os.getcwd())
 
-    def __init__(self, split):
+    def __init__(self, split, val_view=2, test_view=2):
         """
         :param split: one of 'train', 'view_val', 'shape_val', 'view_test', 'test_shape' - for training, validation or overfitting split
         """
@@ -36,6 +34,11 @@ class ShapeNet(torch.utils.data.Dataset):
 
         # keep track of shapes based on split
         self.items = Path(f"split/{split}.txt").read_text().splitlines()
+
+        self.split = split  # split can be used in other places
+        # TODO define the number of image in  view_val and view_test. The overall image of a shape is 24, therefore the remaining part will be assigned to train
+        self.val_view = val_view
+        self.test_view = test_view
 
     def __getitem__(self, index):
         """
@@ -55,7 +58,7 @@ class ShapeNet(torch.utils.data.Dataset):
             "class": np.random((1, 3, 128, 128)),
             # we add an extra dimension as the channel axis, since pytorch 3d tensors are Batch x Channel x Depth x Height x Width
             "encoder": np.random((1, 3, 128, 128)),
-            "GT": ShapeNet.classes.index(item_class),
+            "GT": ShapeNetDataset.classes.index(item_class),
             "3D": voxels[np.newaxis, :, :, :],
             # label is 0 indexed position in sorted class list, e.g. 02691156 is label 0, 02828884 is label 1 and so on.
             "ID": item,
@@ -85,7 +88,7 @@ class ShapeNet(torch.utils.data.Dataset):
         """
         category_id, shape_id = shapenetid.split("/")
         with open(
-            f"{ShapeNet.vox_path}/{category_id}/{shape_id}/model.binvox", "rb"
+            f"{ShapeNetDataset.vox_path}/{category_id}/{shape_id}/model.binvox", "rb"
         ) as fptr:
             voxel = read_as_3d_array(fptr).astype(np.float32)
         return voxel
