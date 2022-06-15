@@ -37,7 +37,7 @@ class DataLoader:
         self.test_view = self.dataset.test_view
         if self.split == "view_val":
             self.shape_num = self.val_view
-        if self.split == "view_test":
+        elif self.split == "view_test":
             self.shape_num = self.test_view
 
     def __iter__(self):

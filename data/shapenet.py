@@ -68,7 +68,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         if self.split in ["train", "shape_val", "shape_test"]:
             enc_img = self.get_image_data(item)
             cls_img = self.get_image_data(item)
-        elif self.split == "view_val":
+        elif self.split in ["view_val", "view_test"]:
             idx = next(self.img_counter)
             enc_img = self.get_image_by_idx(item, idx)
             cls_img = self.get_image_by_idx(item, idx)
@@ -78,7 +78,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
             # we add an extra dimension as the channel axis, since pytorch 3d tensors are Batch x Channel x Depth x Height x Width
             "encoder": enc_img,
             "GT": ShapeNetDataset.classes.index(item_class),
-            "3D": voxels[np.newaxis, :, :, :],
+            "3D": voxels,
             # label is 0 indexed position in sorted class list, e.g. 02691156 is label 0, 02828884 is label 1 and so on.
             "ID": item,
         }
@@ -103,7 +103,9 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         :return: None, modifies batch inplace
         """
         batch["voxel"] = batch["voxel"].to(device)
-        batch["label"] = batch["label"].to(device)
+        batch["encoder"] = batch["encoder"].to(device)
+        batch["GT"] = batch["GT"].to(device)
+        batch["3D"] = batch["3D"].to(device)
 
     @staticmethod
     def get_shape_voxels(shapenetid):
@@ -147,6 +149,8 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         else:
             # index of view_val should be in [self.train_num + self.val_view , 24]
             img_idx = idx + self.train_num + self.val_view
+
+        print(shapenetid, idx)
 
         img_idx = str(idx).zfill(2)
         category_id, shape_id = shapenetid.split("/")
