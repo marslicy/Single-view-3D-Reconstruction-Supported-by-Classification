@@ -1,6 +1,8 @@
 """Definition of Dataloader"""
 
 import numpy as np
+import torch
+from torch.utils.data import DataLoader
 
 # TODO define different behavior for test and val split
 # More specifically, we should 1) use the same image for both encoder 2) the shape_num should be set to 1 (dataloader) 3) all views in val/test should be used (no random pick rather a
@@ -8,7 +10,7 @@ import numpy as np
 # In order to achive 3), a method called load_image_by_idx should be implemented at Dataset, if split is not train, load enc and cls with this method. Dataloader should also be informed with the num of val and test imgs per shape, so that it will change the shape_num to this number. This way it will pick all the imgs belong to this split.
 
 
-class DataLoader:
+class SDataLoader(DataLoader):
     """
     Dataloader Class
     Defines an iterable batch-sampler over a given dataset
@@ -57,12 +59,13 @@ class DataLoader:
                     batch_dict[key].append(value)
             return batch_dict
 
-        def batch_to_numpy(batch):
+        def batch_to_tensor(batch):
             """Transform all values of the given batch dict to numpy arrays"""
-            numpy_batch = {}
+            tensor_batch = {}
             for key, value in batch.items():
-                numpy_batch[key] = np.array(value)
-            return numpy_batch
+                if key != "ID":
+                    tensor_batch[key] = torch.tensor(value)
+            return tensor_batch
 
         if self.shuffle:
             index_iterator = iter(np.random.permutation(len(self.dataset)))
@@ -81,7 +84,7 @@ class DataLoader:
                 # so that we will start the next batch with (shape_num - n) times the index
                 if len(batch) == self.batch_size:
                     terminate_num = i
-                    yield batch_to_numpy(combine_batch_dicts(batch))
+                    yield batch_to_tensor(combine_batch_dicts(batch))
                     batch = []
             terminate_num = 0
 
@@ -119,7 +122,7 @@ class DataLoader:
         #        terminate_num = 0
 
         if len(batch) > 0 and not self.drop_last:
-            yield batch_to_numpy(combine_batch_dicts(batch))
+            yield batch_to_tensor(combine_batch_dicts(batch))
 
     def __len__(self):
         length = None
