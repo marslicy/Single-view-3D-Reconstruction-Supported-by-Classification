@@ -75,11 +75,9 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         return {
             "class": cls_img,
-            # we add an extra dimension as the channel axis, since pytorch 3d tensors are Batch x Channel x Depth x Height x Width
             "encoder": enc_img,
             "GT": ShapeNetDataset.classes.index(item_class),
             "3D": voxels,
-            # label is 0 indexed position in sorted class list, e.g. 02691156 is label 0, 02828884 is label 1 and so on.
             "ID": item,
         }
 
