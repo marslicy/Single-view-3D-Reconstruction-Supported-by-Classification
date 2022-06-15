@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 # In order to achive 3), a method called load_image_by_idx should be implemented at Dataset, if split is not train, load enc and cls with this method. Dataloader should also be informed with the num of val and test imgs per shape, so that it will change the shape_num to this number. This way it will pick all the imgs belong to this split.
 
 
-class SDataLoader(DataLoader):
+class ShapeNetDataLoader(DataLoader):
     """
     Dataloader Class
     Defines an iterable batch-sampler over a given dataset

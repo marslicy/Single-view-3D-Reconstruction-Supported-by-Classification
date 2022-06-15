@@ -4,9 +4,6 @@ import numpy as np
 
 from configs.path import voxroot
 
-print("voxroot is ", voxroot)
-
-
 """
 primary goal: save all the cateid/shapeid into a txt
 
