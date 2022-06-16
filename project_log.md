@@ -11,11 +11,18 @@
 
 - Add *path.py* file for specifying the dataset. (Jiaye Yang)
 
-### 14. 06 
+### 14. 06
 
-- Implemented the *split.txt* for proper split the dataset.
-- Added the required code for loading vox and img data.
+- Implemented the *split.txt* for proper split the dataset. (Jiaye Yang)
+- Added the required code for loading vox and img data. (Jiaye Yang)
 
 ### 15. 06
 
 - Finished implementing dataset and dataloader. (Jiaye Yang)
+
+### 16. 06
+
+- Implemented the model, but with different ConvTranspose3d parameters compared with the baseline model. The baseline model gives the output shape with dimension (53,53,53) (Chenyang Li)
+  - Baseline version:reshape to (128, 4, 4, 4), (5, 2), (5, 2), (5, 2) in format (kernel_size, stride)
+  - version 1: reshape to (128, 4, 4, 4), (1, 2), (3, 2), (4, 2) in format (kernel_size, stride)
+  - version 2: reshape to (8192, 1, 1, 1), (5, 2), (5, 2, 1), (5, 2, 1) in format (kernel_size, stride, (padding))

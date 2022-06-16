@@ -67,14 +67,24 @@ class Model(nn.Module):
                 in_features=global_feature_size + local_feature_size, out_features=8192
             ),
             nn.ReLU(),
-            View((-1, 128, 4, 4, 4)),
+            View((-1, 8192, 1, 1, 1)),
             nn.ConvTranspose3d(
-                in_channels=128, out_channels=128, kernel_size=1, stride=2
+                in_channels=8192, out_channels=128, kernel_size=5, stride=2
             ),
             nn.ConvTranspose3d(
-                in_channels=128, out_channels=64, kernel_size=3, stride=2
+                in_channels=128,
+                out_channels=64,
+                kernel_size=5,
+                stride=2,
+                output_padding=1,
             ),
-            nn.ConvTranspose3d(in_channels=64, out_channels=1, kernel_size=4, stride=2),
+            nn.ConvTranspose3d(
+                in_channels=64,
+                out_channels=1,
+                kernel_size=5,
+                stride=2,
+                output_padding=1,
+            ),
             nn.Sigmoid(),
         )
 
