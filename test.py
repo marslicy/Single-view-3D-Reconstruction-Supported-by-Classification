@@ -8,6 +8,7 @@ dataset = ShapeNetDataset(split, val_view=3, test_view=3)
 
 item1 = dataset[0]
 item2 = dataset[1]
+
 # %%
 # test trainloader
 trainloader = ShapeNetDataLoader(dataset, batch_size=3, shape_num=3)
@@ -19,10 +20,11 @@ for batch in trainloader:
 
     pdb.set_trace()
     print(type(batch))
-import torch
 
 # %%
 # test model
+import torch
+
 from model.model import Model
 
 inputs = torch.rand((5, 3, 127, 127))
