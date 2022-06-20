@@ -65,7 +65,7 @@ def train(
             optimizer.zero_grad()
 
             # Perform forward pass
-            pred_class, pred_3d = model(x1, x2)
+            pred_class, pred_3d = model(x1.float(), x2.float())
 
             loss_class = loss_criterion_class(pred_class, y1)
             loss_3d = loss_criterion_3d(pred_3d, y2)
@@ -103,7 +103,7 @@ def train(
             optimizer.zero_grad()
 
             # Perform forward pass
-            pred_class, pred_3d = model(x1, x2)
+            pred_class, pred_3d = model(x1.float(), x2.float())
 
             loss_class = loss_criterion_class(pred_class, y1)
             loss_3d = loss_criterion_3d(pred_3d, y2)
@@ -135,7 +135,7 @@ def train(
             optimizer.zero_grad()
 
             # Perform forward pass
-            pred_class, pred_3d = model(x1, x2)
+            pred_class, pred_3d = model(x1.float(), x2.float())
 
             loss_class = loss_criterion_class(pred_class, y1)
             loss_3d = loss_criterion_3d(pred_3d, y2)
