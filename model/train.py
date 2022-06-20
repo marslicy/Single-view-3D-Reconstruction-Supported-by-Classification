@@ -36,10 +36,9 @@ def train(
                        'validate_every_n': print validation loss and validation accuracy every n iterations
     """
     # Train classification model
-    loss_criterion_class = torch.nn.CrossEntropyLoss()
-    loss_criterion_class.to(device)
-    loss_criterion_3d = torch.nn.L1Loss()
-    loss_criterion_3d.to(device)
+    loss_criterion = torch.nn.CrossEntropyLoss()
+    loss_criterion.to(device)
+
 
     optimizer = torch.optim.Adam(model.parameters(), config['learning_rate'])
 
@@ -67,8 +66,8 @@ def train(
             # Perform forward pass
             pred_class, pred_3d = model(x1.float(), x2.float())
 
-            loss_class = loss_criterion_class(pred_class, y1)
-            loss_3d = loss_criterion_3d(pred_3d, y2)
+            loss_class = loss_criterion(pred_class, y1)
+            loss_3d = loss_criterion(pred_3d, y2)
             loss = loss_class + loss_3d
         
             # Backward
@@ -105,8 +104,8 @@ def train(
             # Perform forward pass
             pred_class, pred_3d = model(x1.float(), x2.float())
 
-            loss_class = loss_criterion_class(pred_class, y1)
-            loss_3d = loss_criterion_3d(pred_3d, y2)
+            loss_class = loss_criterion(pred_class, y1)
+            loss_3d = loss_criterion(pred_3d, y2)
             loss = loss_class + loss_3d
         
             # Backward
@@ -137,8 +136,8 @@ def train(
             # Perform forward pass
             pred_class, pred_3d = model(x1.float(), x2.float())
 
-            loss_class = loss_criterion_class(pred_class, y1)
-            loss_3d = loss_criterion_3d(pred_3d, y2)
+            loss_class = loss_criterion(pred_class, y1)
+            loss_3d = loss_criterion(pred_3d, y2)
             loss = loss_class + loss_3d
         
             # Backward
