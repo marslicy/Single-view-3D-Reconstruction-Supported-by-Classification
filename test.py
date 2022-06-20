@@ -6,8 +6,7 @@ from data.shapenet_loader import ShapeNetDataLoader
 split = "view_val"
 dataset = ShapeNetDataset(split, val_view=3, test_view=3)
 
-item1 = dataset[0]
-item2 = dataset[1]
+
 
 # %%
 # test trainloader
@@ -21,6 +20,7 @@ for batch in trainloader:
     pdb.set_trace()
     print(type(batch))
 
+
 # %%
 # test model
 import torch
@@ -31,5 +31,24 @@ inputs = torch.rand((5, 3, 127, 127))
 output_class, output_3d = Model()(inputs, inputs)
 assert output_class.shape == (5, 13)
 assert output_3d.shape == (5, 32, 32, 32)
+
+# %%
+# test train
+from model import train
+
+config = {
+    'experiment_name': "train_result",
+    'device': 'cpu', # or 'cuda:0'
+    'batch_size': 10,
+    'resume_ckpt': None,
+    'learning_rate': 0.001,
+    'max_epochs': 1,
+    'print_every_n': 1,
+    'validate_every_n': 1,
+    'val_view':3,
+    'test_view':3
+}
+
+train.main(config)
 
 # %%
