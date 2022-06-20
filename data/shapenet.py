@@ -100,7 +100,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         Utility method for moving all elements of the batch to a device
         :return: None, modifies batch inplace
         """
-        batch["voxel"] = batch["voxel"].to(device)
+        batch["class"] = batch["class"].to(device)
         batch["encoder"] = batch["encoder"].to(device)
         batch["GT"] = batch["GT"].to(device)
         batch["3D"] = batch["3D"].to(device)
@@ -147,8 +147,6 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         else:
             # index of view_val should be in [self.train_num + self.val_view , 24]
             img_idx = idx + self.train_num + self.val_view
-
-        print(shapenetid, idx)
 
         img_idx = str(idx).zfill(2)
         category_id, shape_id = shapenetid.split("/")
