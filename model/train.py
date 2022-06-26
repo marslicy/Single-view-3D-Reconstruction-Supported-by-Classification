@@ -141,7 +141,7 @@ def train(
                 train_loss_3d_running = 0.0
 
         # val_view
-            if batch_idx % config["validate_every_n"] == 0:
+            if iteration % config['validate_every_n'] == (config['validate_every_n'] - 1):
                 model.eval()
                 for batch_idx_val_v, batch in enumerate(val_dataloader_view):
                     # Move batch to device
