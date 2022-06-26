@@ -17,8 +17,20 @@ if __name__ == "__main__":
                     'test_view'
     """
 
-    config = {}
-    device = torch.device("cpu")
+    config = {
+        "experiment_name": "train_result",
+        "device": "cpu",  # or 'cuda:0'
+        "batch_size": 10,
+        "resume_ckpt": None,
+        "learning_rate": 0.001,
+        "max_epochs": 1,
+        "print_every_n": 1,
+        "validate_every_n": 1,
+        "val_view": 3,
+        "test_view": 3,
+        "a": 1,
+        "b": 1,
+    }
     if torch.cuda.is_available() and config["device"].startswith("cuda"):
         device = torch.device(config["device"])
         print("Using device:", config["device"])

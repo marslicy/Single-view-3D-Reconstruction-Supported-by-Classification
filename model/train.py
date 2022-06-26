@@ -14,7 +14,6 @@ def train(
     train_dataloader: DataLoader,
     val_dataloader_view: DataLoader,
     val_dataloader_shape: DataLoader,
-    device,
     config: Dict,
 ):
     """
@@ -39,7 +38,7 @@ def train(
     """
     # Train classification model
     loss_criterion = torch.nn.CrossEntropyLoss()
-    loss_criterion.to(device)
+    loss_criterion.to(config["device"])
 
     optimizer = torch.optim.Adam(model.parameters(), config["learning_rate"])
 
@@ -58,7 +57,7 @@ def train(
 
         for batch_idx, batch in enumerate(train_dataloader):
             # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, device)
+            ShapeNetDataset.move_batch_to_device(batch, config["device"])
             x1 = batch["class"]
             x2 = batch["encoder"]
             y1 = batch["GT"]
@@ -99,7 +98,7 @@ def train(
         # val_view
         for batch_idx, batch in enumerate(val_dataloader_view):
             # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, device)
+            ShapeNetDataset.move_batch_to_device(batch, config["device"])
             x1 = batch["class"]
             x2 = batch["encoder"]
             y1 = batch["GT"]
@@ -112,7 +111,7 @@ def train(
 
             loss_class = loss_criterion(pred_class, y1)
             loss_3d = loss_criterion(pred_3d, y2)
-            loss = loss_class + loss_3d
+            loss = config["a"] * loss_class + config["b"] * loss_3d
 
             # Backward
             loss.backward()
@@ -133,7 +132,7 @@ def train(
         # val_shape
         for batch_idx, batch in enumerate(val_dataloader_shape):
             # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, device)
+            ShapeNetDataset.move_batch_to_device(batch, config["device"])
             x1 = batch["class"]
             x2 = batch["encoder"]
             y1 = batch["GT"]
@@ -179,6 +178,123 @@ def train(
         scheduler.step()
 
 
+def test(
+    model: Model,
+    test_dataloader_view: DataLoader,
+    test_dataloader_shape: DataLoader,
+    config: Dict,
+):
+    """
+    Test the model using both unseen view and unseen shape.
+
+    Args:
+        model (Model): The trained model.
+        test_dataloader_view (DataLoader): Provide test data whose shape was seen by the model,
+                                           but with new views.
+        test_dataloader_shape (DataLoader): Provide test data whose shape was not seen by the model.
+
+    Retruns:
+        tbd
+    """
+    loss_criterion = torch.nn.CrossEntropyLoss()
+    loss_criterion.to(config["device"])
+
+    model.eval()
+
+    test_view_loss = 0.0
+    test_view_loss_class = 0.0
+    test_view_loss_3d = 0.0
+    test_shape_loss = 0.0
+    test_shape_loss_class = 0.0
+    test_shape_loss_3d = 0.0
+
+    for epoch in range(config["max_epochs"]):
+
+        # test_view
+        for batch_idx, batch in enumerate(test_dataloader_view):
+            # Move batch to device
+            ShapeNetDataset.move_batch_to_device(batch, config["device"])
+            x1 = batch["class"]
+            x2 = batch["encoder"]
+            y1 = batch["GT"]
+            y2 = batch["3D"]
+
+            # optimizer.zero_grad()
+
+            # Perform forward pass
+            pred_class, pred_3d = model(x1.float(), x2.float())
+
+            loss_class = loss_criterion(pred_class, y1)
+            loss_3d = loss_criterion(pred_3d, y2)
+            loss = loss_class + loss_3d
+
+            # Backward
+            # loss.backward()
+            # Update network parameters
+            # optimizer.step()
+            # loss logging
+            test_view_loss += loss.item()
+            test_view_loss_class += loss_class.item()
+            test_view_loss_3d += loss_3d.item()
+            iteration = epoch * len(test_dataloader_view) + batch_idx
+
+            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
+                test_view_loss = test_view_loss / config["print_every_n"]
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] test_view_loss: {test_view_loss:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_class: {test_view_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_3d: {test_view_loss_3d:.6f}"
+                )
+
+                test_view_loss = 0.0
+
+        # test_shape
+        for batch_idx, batch in enumerate(test_dataloader_shape):
+            # Move batch to device
+            ShapeNetDataset.move_batch_to_device(batch, config["device"])
+            x1 = batch["class"]
+            x2 = batch["encoder"]
+            y1 = batch["GT"]
+            y2 = batch["3D"]
+
+            # optimizer.zero_grad()
+
+            # Perform forward pass
+            pred_class, pred_3d = model(x1.float(), x2.float())
+
+            loss_class = loss_criterion(pred_class, y1)
+            loss_3d = loss_criterion(pred_3d, y2)
+            loss = loss_class + loss_3d
+
+            # Backward
+            # loss.backward()
+            # Update network parameters
+            # optimizer.step()
+            # loss logging
+            test_shape_loss += loss.item()
+            test_shape_loss_class += loss_class.item()
+            test_shape_loss_3d += loss_3d.item()
+            iteration = epoch * len(test_dataloader_shape) + batch_idx
+
+            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
+                test_shape_loss = test_shape_loss / config["print_every_n"]
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss: {test_shape_loss:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_class: {test_shape_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_3d: {test_shape_loss_3d:.6f}"
+                )
+
+                test_shape_loss = 0.0
+
+
 def main(config):
     """
     Function for training DeepSDF
@@ -218,6 +334,22 @@ def main(config):
         batch_size=config["batch_size"],  # The size of batches is defined here
     )
 
+    test_dataset_view = ShapeNetDataset(
+        "view_test", config["val_view"], config["test_view"]
+    )
+    test_dataloader_view = ShapeNetDataLoader(
+        test_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        batch_size=config["batch_size"],  # The size of batches is defined here
+    )
+
+    test_dataset_shape = ShapeNetDataset(
+        "shape_test", config["val_view"], config["test_view"]
+    )
+    test_dataloader_shape = ShapeNetDataLoader(
+        test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        batch_size=config["batch_size"],  # The size of batches is defined here
+    )
+
     # Instantiate model
     model = Model()
 
@@ -235,103 +367,12 @@ def main(config):
         train_dataloader,
         val_dataloader_view,
         val_dataloader_shape,
-        config["device"],
         config,
     )
 
-
-def test(
-    model: Model,
-    test_dataloader_view: DataLoader,
-    test_dataloader_shape: DataLoader,
-    config: Dict,
-):
-    """
-    Test the model using both unseen view and unseen shape.
-
-    Args:
-        model (Model): The trained model.
-        test_dataloader_view (DataLoader): Provide test data whose shape was seen by the model,
-                                           but with new views.
-        test_dataloader_shape (DataLoader): Provide test data whose shape was not seen by the model.
-
-    Retruns:
-        tbd
-    """
-    loss_criterion = torch.nn.CrossEntropyLoss()
-    loss_criterion.to(config["device"])
-
-    model.eval()
-
-    test_view_loss_running = 0.0
-    test_shape_loss_running = 0.0
-
-    for epoch in range(config["max_epochs"]):
-
-        # test_view
-        for batch_idx, batch in enumerate(test_dataloader_view):
-            # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, config["device"])
-            x1 = batch["class"]
-            x2 = batch["encoder"]
-            y1 = batch["GT"]
-            y2 = batch["3D"]
-
-            # optimizer.zero_grad()
-
-            # Perform forward pass
-            pred_class, pred_3d = model(x1.float(), x2.float())
-
-            loss_class = loss_criterion(pred_class, y1)
-            loss_3d = loss_criterion(pred_3d, y2)
-            loss = loss_class + loss_3d
-
-            # Backward
-            # loss.backward()
-            # Update network parameters
-            # optimizer.step()
-            # loss logging
-            test_view_loss_running += loss.item()
-            iteration = epoch * len(test_dataloader_view) + batch_idx
-
-            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                test_view_loss = test_view_loss_running / config["print_every_n"]
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_view_loss: {test_view_loss:.6f}"
-                )
-
-                test_view_loss_running = 0.0
-
-        # test_shape
-        for batch_idx, batch in enumerate(test_dataloader_shape):
-            # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, config["device"])
-            x1 = batch["class"]
-            x2 = batch["encoder"]
-            y1 = batch["GT"]
-            y2 = batch["3D"]
-
-            # optimizer.zero_grad()
-
-            # Perform forward pass
-            pred_class, pred_3d = model(x1.float(), x2.float())
-
-            loss_class = loss_criterion(pred_class, y1)
-            loss_3d = loss_criterion(pred_3d, y2)
-            loss = loss_class + loss_3d
-
-            # Backward
-            # loss.backward()
-            # Update network parameters
-            # optimizer.step()
-            # loss logging
-            test_shape_loss_running += loss.item()
-            iteration = epoch * len(test_dataloader_shape) + batch_idx
-
-            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                test_shape_loss = test_shape_loss_running / config["print_every_n"]
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss: {test_shape_loss:.6f}"
-                )
-
-                test_shape_loss_running = 0.0
+    train(
+        model,
+        test_dataloader_view,
+        test_dataloader_shape,
+        config,
+    )

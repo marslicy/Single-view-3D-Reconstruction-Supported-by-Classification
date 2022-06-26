@@ -64,7 +64,7 @@ class ShapeNetDataLoader(DataLoader):
             tensor_batch = {}
             for key, value in batch.items():
                 if key != "ID":
-                    tensor_batch[key] = torch.tensor(value)
+                    tensor_batch[key] = torch.tensor(np.array(value))
             return tensor_batch
 
         if self.shuffle:
