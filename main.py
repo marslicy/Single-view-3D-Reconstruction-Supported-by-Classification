@@ -22,7 +22,7 @@ if __name__ == "__main__":
         "device": "cpu",  # or 'cuda:0'
         "batch_size": 10,
         "resume_ckpt": None,
-        "learning_rate": 0.001,
+        "learning_rate": 0.0001,
         "max_epochs": 1,
         "print_every_n": 1,
         "validate_every_n": 1,

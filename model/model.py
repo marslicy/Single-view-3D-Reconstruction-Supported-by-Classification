@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torchvision
 
 
 class Model(nn.Module):
@@ -12,26 +13,8 @@ class Model(nn.Module):
             local_feature_size (int): The length of the local feature embeddings
         """
         super(Model, self).__init__()
-        self.view_enc = nn.Sequential(
-            nn.Conv2d(in_channels=3, out_channels=96, kernel_size=7),
-            nn.MaxPool2d(kernel_size=2),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(in_channels=96, out_channels=128, kernel_size=3),
-            nn.MaxPool2d(kernel_size=2),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(in_channels=128, out_channels=256, kernel_size=3),
-            nn.MaxPool2d(kernel_size=2),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
-            nn.MaxPool2d(kernel_size=2),
-            nn.LeakyReLU(negative_slope=0.01),
-            nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
-            nn.MaxPool2d(kernel_size=2),
-            nn.LeakyReLU(negative_slope=0.01),
-            View((-1, 256)),
-            nn.Linear(in_features=256, out_features=local_feature_size),
-            nn.ReLU(),
-        )
+        self.view_enc = torchvision.models.resnet18(pretrained=True)
+        self.view_enc.fc = nn.Linear(in_features=512, out_features=global_feature_size)
 
         self.class_enc = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=96, kernel_size=7),
