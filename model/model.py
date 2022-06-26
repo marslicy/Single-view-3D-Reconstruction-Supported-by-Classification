@@ -13,10 +13,7 @@ class Model(nn.Module):
             local_feature_size (int): The length of the local feature embeddings
         """
         super(Model, self).__init__()
-        self.view_enc = torchvision.models.resnet18(pretrained=True)
-        self.view_enc.fc = nn.Linear(in_features=512, out_features=global_feature_size)
-
-        self.class_enc = nn.Sequential(
+        self.view_enc = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=96, kernel_size=7),
             nn.MaxPool2d(kernel_size=2),
             nn.LeakyReLU(negative_slope=0.01),
@@ -31,10 +28,14 @@ class Model(nn.Module):
             nn.LeakyReLU(negative_slope=0.01),
             nn.Conv2d(in_channels=256, out_channels=256, kernel_size=3),
             nn.MaxPool2d(kernel_size=2),
+            nn.LeakyReLU(negative_slope=0.01),
             View((-1, 256)),
             nn.Linear(in_features=256, out_features=local_feature_size),
             nn.ReLU(),
         )
+
+        self.class_enc = torchvision.models.resnet18(pretrained=True)
+        self.class_enc.fc = nn.Linear(in_features=512, out_features=global_feature_size)
 
         self.class_dec = nn.Sequential(  # might need to be modified
             nn.Linear(in_features=global_feature_size, out_features=64),
