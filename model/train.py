@@ -136,151 +136,152 @@ def train(
                 train_loss_3d_running = 0.0
 
         # val_view
-        model.eval()
-        for batch_idx, batch in enumerate(val_dataloader_view):
-            # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, config["device"])
-            x1 = batch["class"]
-            x2 = batch["encoder"]
-            y1 = batch["GT"]
-            y2 = batch["3D"]
+            if batch_idx == config["validate_every_n"]:
+                model.eval()
+                for batch_idx, batch in enumerate(val_dataloader_view):
+                    # Move batch to device
+                    ShapeNetDataset.move_batch_to_device(batch, config["device"])
+                    x1 = batch["class"]
+                    x2 = batch["encoder"]
+                    y1 = batch["GT"]
+                    y2 = batch["3D"]
 
-            optimizer.zero_grad()
+                    optimizer.zero_grad()
 
-            # Perform forward pass
-            pred_class, pred_3d = model(x1.float(), x2.float())
+                    # Perform forward pass
+                    pred_class, pred_3d = model(x1.float(), x2.float())
 
-            loss_class = loss_criterion(pred_class, y1)
-            loss_3d = loss_criterion(pred_3d, y2)
-            loss = config["a"] * loss_class + config["b"] * loss_3d
+                    loss_class = loss_criterion(pred_class, y1)
+                    loss_3d = loss_criterion(pred_3d, y2)
+                    loss = config["a"] * loss_class + config["b"] * loss_3d
 
-            # Backward
-            loss.backward()
-            # Update network parameters
-            optimizer.step()
-            # loss logging
-            val_view_loss_running += loss.item()
-            val_view_loss_class_running += loss_class.item()
-            val_view_loss_3d_running += loss_3d.item()
+                    # Backward
+                    loss.backward()
+                    # Update network parameters
+                    optimizer.step()
+                    # loss logging
+                    val_view_loss_running += loss.item()
+                    val_view_loss_class_running += loss_class.item()
+                    val_view_loss_3d_running += loss_3d.item()
 
-            iteration = epoch * len(val_dataloader_view) + batch_idx
+                    iteration = epoch * len(val_dataloader_view) + batch_idx
 
-            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                val_view_loss = val_view_loss_running / config["print_every_n"]
-                val_view_loss_class = (
-                    val_view_loss_class_running / config["print_every_n"]
-                )
-                val_view_loss_3d = val_view_loss_3d_running / config["print_every_n"]
+                    if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
+                        val_view_loss = val_view_loss_running / config["print_every_n"]
+                        val_view_loss_class = (
+                            val_view_loss_class_running / config["print_every_n"]
+                        )
+                        val_view_loss_3d = val_view_loss_3d_running / config["print_every_n"]
 
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss: {val_view_loss:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_class: {val_view_loss_class:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_3d: {val_view_loss_3d:.6f}"
-                )
+                        print(
+                            f"[{epoch:03d}/{batch_idx:05d}] val_view_loss: {val_view_loss:.6f}"
+                        )
+                        print(
+                            f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_class: {val_view_loss_class:.6f}"
+                        )
+                        print(
+                            f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_3d: {val_view_loss_3d:.6f}"
+                        )
 
-                writer.add_scalar(
-                    "View validation loss",
-                    val_view_loss,
-                    epoch * len(val_dataloader_view) + batch_idx,
-                )
-                writer.add_scalar(
-                    "View validation  loss (class)",
-                    val_view_loss_class,
-                    epoch * len(val_dataloader_view) + batch_idx,
-                )
-                writer.add_scalar(
-                    "View validation  loss (3D)",
-                    val_view_loss_3d,
-                    epoch * len(val_dataloader_view) + batch_idx,
-                )
+                        writer.add_scalar(
+                            "View validation loss",
+                            val_view_loss,
+                            epoch * len(val_dataloader_view) + batch_idx,
+                        )
+                        writer.add_scalar(
+                            "View validation  loss (class)",
+                            val_view_loss_class,
+                            epoch * len(val_dataloader_view) + batch_idx,
+                        )
+                        writer.add_scalar(
+                            "View validation  loss (3D)",
+                            val_view_loss_3d,
+                            epoch * len(val_dataloader_view) + batch_idx,
+                        )
 
-                if val_view_loss < val_view_best_loss:
-                    torch.save(
-                        model.state_dict(),
-                        f'./runs/{config["experiment_name"]}/val_view_model_best.ckpt',
-                    )
-                    val_view_best_loss = val_view_loss
+                        if val_view_loss < val_view_best_loss:
+                            torch.save(
+                                model.state_dict(),
+                                f'./runs/{config["experiment_name"]}/val_view_model_best.ckpt',
+                            )
+                            val_view_best_loss = val_view_loss
 
-                val_view_loss_running = 0.0
-                val_view_loss_class_running = 0.0
-                val_view_loss_3d_running = 0.0
+                        val_view_loss_running = 0.0
+                        val_view_loss_class_running = 0.0
+                        val_view_loss_3d_running = 0.0
 
-        # val_shape
-        for batch_idx, batch in enumerate(val_dataloader_shape):
-            # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, config["device"])
-            x1 = batch["class"]
-            x2 = batch["encoder"]
-            y1 = batch["GT"]
-            y2 = batch["3D"]
+                # val_shape
+                for batch_idx, batch in enumerate(val_dataloader_shape):
+                    # Move batch to device
+                    ShapeNetDataset.move_batch_to_device(batch, config["device"])
+                    x1 = batch["class"]
+                    x2 = batch["encoder"]
+                    y1 = batch["GT"]
+                    y2 = batch["3D"]
 
-            optimizer.zero_grad()
+                    optimizer.zero_grad()
 
-            # Perform forward pass
-            pred_class, pred_3d = model(x1.float(), x2.float())
+                    # Perform forward pass
+                    pred_class, pred_3d = model(x1.float(), x2.float())
 
-            loss_class = loss_criterion(pred_class, y1)
-            loss_3d = loss_criterion(pred_3d, y2)
-            loss = loss_class + loss_3d
+                    loss_class = loss_criterion(pred_class, y1)
+                    loss_3d = loss_criterion(pred_3d, y2)
+                    loss = loss_class + loss_3d
 
-            # Backward
-            loss.backward()
-            # Update network parameters
-            optimizer.step()
-            # loss logging
-            val_shape_loss_running += loss.item()
-            val_shape_loss_class_running += loss_class.item()
-            val_shape_loss_3d_running += loss_3d.item()
+                    # Backward
+                    loss.backward()
+                    # Update network parameters
+                    optimizer.step()
+                    # loss logging
+                    val_shape_loss_running += loss.item()
+                    val_shape_loss_class_running += loss_class.item()
+                    val_shape_loss_3d_running += loss_3d.item()
 
-            iteration = epoch * len(val_dataloader_shape) + batch_idx
+                    iteration = epoch * len(val_dataloader_shape) + batch_idx
 
-            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                val_shape_loss = val_shape_loss_running / config["print_every_n"]
-                val_shape_loss_class = (
-                    val_shape_loss_class_running / config["print_every_n"]
-                )
-                val_shape_loss_3d = val_shape_loss_3d_running / config["print_every_n"]
+                    if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
+                        val_shape_loss = val_shape_loss_running / config["print_every_n"]
+                        val_shape_loss_class = (
+                            val_shape_loss_class_running / config["print_every_n"]
+                        )
+                        val_shape_loss_3d = val_shape_loss_3d_running / config["print_every_n"]
 
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss: {val_shape_loss:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_class: {val_shape_loss_class:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_3d: {val_shape_loss_3d:.6f}"
-                )
+                        print(
+                            f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss: {val_shape_loss:.6f}"
+                        )
+                        print(
+                            f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_class: {val_shape_loss_class:.6f}"
+                        )
+                        print(
+                            f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_3d: {val_shape_loss_3d:.6f}"
+                        )
 
-                writer.add_scalar(
-                    "Shape validation loss",
-                    val_shape_loss,
-                    epoch * len(val_dataloader_shape) + batch_idx,
-                )
-                writer.add_scalar(
-                    "Shape validation  loss (class)",
-                    val_shape_loss_class,
-                    epoch * len(val_dataloader_shape) + batch_idx,
-                )
-                writer.add_scalar(
-                    "Shape validation  loss (3D)",
-                    val_shape_loss_3d,
-                    epoch * len(val_dataloader_shape) + batch_idx,
-                )
+                        writer.add_scalar(
+                            "Shape validation loss",
+                            val_shape_loss,
+                            epoch * len(val_dataloader_shape) + batch_idx,
+                        )
+                        writer.add_scalar(
+                            "Shape validation  loss (class)",
+                            val_shape_loss_class,
+                            epoch * len(val_dataloader_shape) + batch_idx,
+                        )
+                        writer.add_scalar(
+                            "Shape validation  loss (3D)",
+                            val_shape_loss_3d,
+                            epoch * len(val_dataloader_shape) + batch_idx,
+                        )
 
-                if val_shape_loss < val_shape_best_loss:
-                    torch.save(
-                        model.state_dict(),
-                        f'./runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
-                    )
-                    val_shape_best_loss = val_shape_loss
+                        if val_shape_loss < val_shape_best_loss:
+                            torch.save(
+                                model.state_dict(),
+                                f'./runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
+                            )
+                            val_shape_best_loss = val_shape_loss
 
-                val_shape_loss_running = 0.0
-                val_shape_loss_class_running = 0.0
-                val_shape_loss_class_running = 0.0
+                        val_shape_loss_running = 0.0
+                        val_shape_loss_class_running = 0.0
+                        val_shape_loss_class_running = 0.0
 
             # # visualize first 5 training shape reconstructions from latent codes
             # if iteration % config['visualize_every_n'] == (config['visualize_every_n'] - 1):
