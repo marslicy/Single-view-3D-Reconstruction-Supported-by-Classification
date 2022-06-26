@@ -49,9 +49,17 @@ def train(
     model.train()
 
     train_loss_running = 0.0
-    best_loss = float("inf")
+    train_loss_class_running = 0.0
+    train_loss_3d_running = 0.0
     val_view_loss_running = 0.0
+    val_view_loss_class_running = 0.0
+    val_view_loss_3d_running = 0.0
     val_shape_loss_running = 0.0
+    val_shape_loss_class_running = 0.0
+    val_shape_loss_3d_running = 0.0
+    train_best_loss = float("inf")
+    val_view_best_loss = float("inf")
+    val_shape_best_loss = float("inf")
 
     for epoch in range(config["max_epochs"]):
 
@@ -78,24 +86,39 @@ def train(
             optimizer.step()
             # loss logging
             train_loss_running += loss.item()
+            train_loss_class_running += loss_class.item()
+            train_loss_3d_running += loss_3d.item()
+
             iteration = epoch * len(train_dataloader) + batch_idx
 
             if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
                 train_loss = train_loss_running / config["print_every_n"]
+                train_loss_class = train_loss_3d_running / config["print_every_n"]
+                train_loss_3d = train_loss_3d_running / config["print_every_n"]
+
                 print(f"[{epoch:03d}/{batch_idx:05d}] train_loss: {train_loss:.6f}")
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] train_loss_class: {train_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] train_loss_3d: {train_loss_3d:.6f}"
+                )
 
                 # save best train model and latent codes
-                if train_loss < best_loss:
+                if train_loss < train_best_loss:
                     torch.save(
                         model.state_dict(),
-                        f'3dml-project/runs/{config["experiment_name"]}/model_best.ckpt',
+                        f'/runs/{config["experiment_name"]}/train_model_best.ckpt',
                     )
                     # torch.save(latent_vectors.state_dict(), f'exercise_3/runs/{config["experiment_name"]}/latent_best.ckpt')
-                    best_loss = train_loss
+                    train_best_loss = train_loss
 
                 train_loss_running = 0.0
+                train_loss_class = 0.0
+                train_loss_3d = 0.0
 
         # val_view
+        model.eval()
         for batch_idx, batch in enumerate(val_dataloader_view):
             # Move batch to device
             ShapeNetDataset.move_batch_to_device(batch, config["device"])
@@ -119,15 +142,38 @@ def train(
             optimizer.step()
             # loss logging
             val_view_loss_running += loss.item()
+            val_view_loss_class_running += loss_class.item()
+            val_view_loss_3d_running += loss_3d.item()
+
             iteration = epoch * len(val_dataloader_view) + batch_idx
 
             if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
                 val_view_loss = val_view_loss_running / config["print_every_n"]
+                val_view_loss_class = (
+                    val_view_loss_class_running / config["print_every_n"]
+                )
+                val_view_loss_3d = val_view_loss_3d_running / config["print_every_n"]
+
                 print(
                     f"[{epoch:03d}/{batch_idx:05d}] val_view_loss: {val_view_loss:.6f}"
                 )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_class: {val_view_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_3d: {val_view_loss_3d:.6f}"
+                )
+                if val_view_loss < val_view_best_loss:
+                    torch.save(
+                        model.state_dict(),
+                        f'/runs/{config["experiment_name"]}/val_view_model_best.ckpt',
+                    )
+                    # torch.save(latent_vectors.state_dict(), f'exercise_3/runs/{config["experiment_name"]}/latent_best.ckpt')
+                    val_view_best_loss = val_view_loss
 
                 val_view_loss_running = 0.0
+                val_view_loss_class_running = 0.0
+                val_view_loss_3d_running = 0.0
 
         # val_shape
         for batch_idx, batch in enumerate(val_dataloader_shape):
@@ -153,15 +199,38 @@ def train(
             optimizer.step()
             # loss logging
             val_shape_loss_running += loss.item()
+            val_shape_loss_class_running += loss_class.item()
+            val_shape_loss_3d_running += loss_3d.item()
+
             iteration = epoch * len(val_dataloader_shape) + batch_idx
 
             if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
                 val_shape_loss = val_shape_loss_running / config["print_every_n"]
+                val_shape_loss_class = (
+                    val_shape_loss_class_running / config["print_every_n"]
+                )
+                val_shape_loss_3d = val_shape_loss_3d_running / config["print_every_n"]
+
                 print(
                     f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss: {val_shape_loss:.6f}"
                 )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_class: {val_shape_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_3d: {val_shape_loss_3d:.6f}"
+                )
+                if val_shape_loss < val_shape_best_loss:
+                    torch.save(
+                        model.state_dict(),
+                        f'/runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
+                    )
+                    # torch.save(latent_vectors.state_dict(), f'exercise_3/runs/{config["experiment_name"]}/latent_best.ckpt')
+                    val_shape_best_loss = val_shape_loss
 
                 val_shape_loss_running = 0.0
+                val_shape_loss_class_running = 0.0
+                val_shape_loss_class_running = 0.0
 
             # # visualize first 5 training shape reconstructions from latent codes
             # if iteration % config['visualize_every_n'] == (config['visualize_every_n'] - 1):
@@ -201,12 +270,12 @@ def test(
 
     model.eval()
 
-    test_view_loss = 0.0
-    test_view_loss_class = 0.0
-    test_view_loss_3d = 0.0
-    test_shape_loss = 0.0
-    test_shape_loss_class = 0.0
-    test_shape_loss_3d = 0.0
+    test_view_loss_running = 0.0
+    test_view_loss_class_running = 0.0
+    test_view_loss_3d_running = 0.0
+    test_shape_loss_running = 0.0
+    test_shape_loss_class_running = 0.0
+    test_shape_loss_3d_running = 0.0
 
     for epoch in range(config["max_epochs"]):
 
@@ -233,13 +302,18 @@ def test(
             # Update network parameters
             # optimizer.step()
             # loss logging
-            test_view_loss += loss.item()
-            test_view_loss_class += loss_class.item()
-            test_view_loss_3d += loss_3d.item()
+            test_view_loss_running += loss.item()
+            test_view_loss_class_running += loss_class.item()
+            test_view_loss_3d_running += loss_3d.item()
             iteration = epoch * len(test_dataloader_view) + batch_idx
 
             if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                test_view_loss = test_view_loss / config["print_every_n"]
+                test_view_loss = test_view_loss_running / config["print_every_n"]
+                test_view_loss_class = (
+                    test_view_loss_class_running / config["print_every_n"]
+                )
+                test_view_loss_3d = test_view_loss_3d_running / config["print_every_n"]
+
                 print(
                     f"[{epoch:03d}/{batch_idx:05d}] test_view_loss: {test_view_loss:.6f}"
                 )
@@ -250,7 +324,9 @@ def test(
                     f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_3d: {test_view_loss_3d:.6f}"
                 )
 
-                test_view_loss = 0.0
+                test_view_loss_running = 0.0
+                test_view_loss_class_running = 0.0
+                test_view_loss_3d_running = 0.0
 
         # test_shape
         for batch_idx, batch in enumerate(test_dataloader_shape):
@@ -275,13 +351,21 @@ def test(
             # Update network parameters
             # optimizer.step()
             # loss logging
-            test_shape_loss += loss.item()
-            test_shape_loss_class += loss_class.item()
-            test_shape_loss_3d += loss_3d.item()
+            test_shape_loss_running += loss.item()
+            test_shape_loss_class_running += loss_class.item()
+            test_shape_loss_3d_running += loss_3d.item()
+
             iteration = epoch * len(test_dataloader_shape) + batch_idx
 
             if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                test_shape_loss = test_shape_loss / config["print_every_n"]
+                test_shape_loss = test_shape_loss_running / config["print_every_n"]
+                test_shape_loss_class = (
+                    test_shape_loss_class_running / config["print_every_n"]
+                )
+                test_shape_loss_3d = (
+                    test_shape_loss_3d_running / config["print_every_n"]
+                )
+
                 print(
                     f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss: {test_shape_loss:.6f}"
                 )
@@ -292,7 +376,9 @@ def test(
                     f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_3d: {test_shape_loss_3d:.6f}"
                 )
 
-                test_shape_loss = 0.0
+                test_shape_loss_running = 0.0
+                test_shape_loss_class_running = 0.0
+                test_shape_loss_3d_running = 0.0
 
 
 def main(config):

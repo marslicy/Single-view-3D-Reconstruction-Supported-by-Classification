@@ -6,3 +6,4 @@ pytorch
 pre-commit
 k3d
 matplotlib
+torch_tb_profiler

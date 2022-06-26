@@ -30,6 +30,9 @@ if __name__ == "__main__":
         "test_view": 3,
         "a": 1,
         "b": 1,
+        "global_feature_size": 128,
+        "local_feature_size": 128,
+        "num_class": 13,
     }
     if torch.cuda.is_available() and config["device"].startswith("cuda"):
         device = torch.device(config["device"])
