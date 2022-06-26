@@ -423,6 +423,7 @@ def main(config):
     train_dataloader = ShapeNetDataLoader(
         train_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
     )
 
     val_dataset_view = ShapeNetDataset(
@@ -431,6 +432,7 @@ def main(config):
     val_dataloader_view = ShapeNetDataLoader(
         val_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
     )
 
     val_dataset_shape = ShapeNetDataset(
@@ -439,6 +441,7 @@ def main(config):
     val_dataloader_shape = ShapeNetDataLoader(
         val_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
     )
 
     test_dataset_view = ShapeNetDataset(
