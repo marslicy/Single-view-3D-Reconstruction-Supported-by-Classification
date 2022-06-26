@@ -34,9 +34,7 @@ if __name__ == "__main__":
         "local_feature_size": 128,
         "num_class": 13,
     }
-    if torch.cuda.is_available() and config["device"].startswith("cuda"):
-        device = torch.device(config["device"])
-        print("Using device:", config["device"])
-    else:
-        print("Using CPU")
+    if torch.cuda.is_available():
+        config["device"] = "cuda"
+    print("Using device:", config["device"])
     main(config)
