@@ -4,3 +4,5 @@ isort
 flake8
 pytorch
 pre-commit
+k3d
+matplotlib
