@@ -61,6 +61,7 @@ batch = trainloader.__iter__().__next__()
 visualize_3d(batch["3D"][0], batch["3D"][0], "test")
 visualize_2d(batch["class"][0])
 # %%
+# test test
 config = {
     "experiment_name": "train_result",
     "device": "cpu",  # or 'cuda:0'
@@ -82,7 +83,9 @@ test_dataset_view = ShapeNetDataset(
     "view_test", config["val_view"], config["test_view"]
 )
 test_dataloader_view = ShapeNetDataLoader(
-    test_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    test_dataset_view[
+        :10
+    ],  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
     batch_size=config["batch_size"],  # The size of batches is defined here
 )
 
@@ -90,7 +93,9 @@ test_dataset_shape = ShapeNetDataset(
     "shape_test", config["val_view"], config["test_view"]
 )
 test_dataloader_shape = ShapeNetDataLoader(
-    test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    test_dataset_shape[
+        :10
+    ],  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
     batch_size=config["batch_size"],  # The size of batches is defined here
 )
 model = Model(
@@ -98,7 +103,7 @@ model = Model(
 )
 model.load_state_dict(
     torch.load(
-        f'./3dml-project/runs/{config["experiment_name"]}/model_best.ckpt',
+        f'./runs/{config["experiment_name"]}/model_best.ckpt',
         map_location="cpu",
     )
 )

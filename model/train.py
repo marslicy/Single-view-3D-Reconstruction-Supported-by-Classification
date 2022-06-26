@@ -3,6 +3,7 @@ from typing import Dict
 
 import torch
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
 
 from data.shapenet import ShapeNetDataset
 from data.shapenet_loader import ShapeNetDataLoader
@@ -45,6 +46,8 @@ def train(
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer, step_size=500, gamma=0.5
     )  # not necessary
+
+    writer = SummaryWriter(f'runs/{config["experiment_name"]}/log')
 
     model.train()
 
@@ -93,7 +96,7 @@ def train(
 
             if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
                 train_loss = train_loss_running / config["print_every_n"]
-                train_loss_class = train_loss_3d_running / config["print_every_n"]
+                train_loss_class = train_loss_class_running / config["print_every_n"]
                 train_loss_3d = train_loss_3d_running / config["print_every_n"]
 
                 print(f"[{epoch:03d}/{batch_idx:05d}] train_loss: {train_loss:.6f}")
@@ -104,18 +107,33 @@ def train(
                     f"[{epoch:03d}/{batch_idx:05d}] train_loss_3d: {train_loss_3d:.6f}"
                 )
 
+                writer.add_scalar(
+                    "Training loss",
+                    train_loss,
+                    epoch * len(train_dataloader) + batch_idx,
+                )
+                writer.add_scalar(
+                    "Training loss (class)",
+                    train_loss_class,
+                    epoch * len(train_dataloader) + batch_idx,
+                )
+                writer.add_scalar(
+                    "Training loss (3D)",
+                    train_loss_3d,
+                    epoch * len(train_dataloader) + batch_idx,
+                )
+
                 # save best train model and latent codes
                 if train_loss < train_best_loss:
                     torch.save(
                         model.state_dict(),
-                        f'/runs/{config["experiment_name"]}/train_model_best.ckpt',
+                        f'./runs/{config["experiment_name"]}/train_model_best.ckpt',
                     )
-                    # torch.save(latent_vectors.state_dict(), f'exercise_3/runs/{config["experiment_name"]}/latent_best.ckpt')
                     train_best_loss = train_loss
 
                 train_loss_running = 0.0
-                train_loss_class = 0.0
-                train_loss_3d = 0.0
+                train_loss_class_running = 0.0
+                train_loss_3d_running = 0.0
 
         # val_view
         model.eval()
@@ -163,12 +181,28 @@ def train(
                 print(
                     f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_3d: {val_view_loss_3d:.6f}"
                 )
+
+                writer.add_scalar(
+                    "View validation loss",
+                    val_view_loss,
+                    epoch * len(val_dataloader_view) + batch_idx,
+                )
+                writer.add_scalar(
+                    "View validation  loss (class)",
+                    val_view_loss_class,
+                    epoch * len(val_dataloader_view) + batch_idx,
+                )
+                writer.add_scalar(
+                    "View validation  loss (3D)",
+                    val_view_loss_3d,
+                    epoch * len(val_dataloader_view) + batch_idx,
+                )
+
                 if val_view_loss < val_view_best_loss:
                     torch.save(
                         model.state_dict(),
-                        f'/runs/{config["experiment_name"]}/val_view_model_best.ckpt',
+                        f'./runs/{config["experiment_name"]}/val_view_model_best.ckpt',
                     )
-                    # torch.save(latent_vectors.state_dict(), f'exercise_3/runs/{config["experiment_name"]}/latent_best.ckpt')
                     val_view_best_loss = val_view_loss
 
                 val_view_loss_running = 0.0
@@ -220,12 +254,28 @@ def train(
                 print(
                     f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_3d: {val_shape_loss_3d:.6f}"
                 )
+
+                writer.add_scalar(
+                    "Shape validation loss",
+                    val_shape_loss,
+                    epoch * len(val_dataloader_shape) + batch_idx,
+                )
+                writer.add_scalar(
+                    "Shape validation  loss (class)",
+                    val_shape_loss_class,
+                    epoch * len(val_dataloader_shape) + batch_idx,
+                )
+                writer.add_scalar(
+                    "Shape validation  loss (3D)",
+                    val_shape_loss_3d,
+                    epoch * len(val_dataloader_shape) + batch_idx,
+                )
+
                 if val_shape_loss < val_shape_best_loss:
                     torch.save(
                         model.state_dict(),
-                        f'/runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
+                        f'./runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
                     )
-                    # torch.save(latent_vectors.state_dict(), f'exercise_3/runs/{config["experiment_name"]}/latent_best.ckpt')
                     val_shape_best_loss = val_shape_loss
 
                 val_shape_loss_running = 0.0
@@ -276,109 +326,80 @@ def test(
     test_shape_loss_running = 0.0
     test_shape_loss_class_running = 0.0
     test_shape_loss_3d_running = 0.0
+    with torch.no_grad():
 
-    for epoch in range(config["max_epochs"]):
+        for epoch in range(config["max_epochs"]):
+            # test_view
+            for batch_idx, batch in enumerate(test_dataloader_view):
+                # Move batch to device
+                ShapeNetDataset.move_batch_to_device(batch, config["device"])
+                x1 = batch["class"]
+                x2 = batch["encoder"]
+                y1 = batch["GT"]
+                y2 = batch["3D"]
 
-        # test_view
-        for batch_idx, batch in enumerate(test_dataloader_view):
-            # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, config["device"])
-            x1 = batch["class"]
-            x2 = batch["encoder"]
-            y1 = batch["GT"]
-            y2 = batch["3D"]
+                # Perform forward pass
+                pred_class, pred_3d = model(x1.float(), x2.float())
 
-            # optimizer.zero_grad()
+                loss_class = loss_criterion(pred_class, y1)
+                loss_3d = loss_criterion(pred_3d, y2)
+                loss = loss_class + loss_3d
 
-            # Perform forward pass
-            pred_class, pred_3d = model(x1.float(), x2.float())
+                # loss logging
+                test_view_loss_running += loss.item()
+                test_view_loss_class_running += loss_class.item()
+                test_view_loss_3d_running += loss_3d.item()
 
-            loss_class = loss_criterion(pred_class, y1)
-            loss_3d = loss_criterion(pred_3d, y2)
-            loss = loss_class + loss_3d
+            test_view_loss = test_view_loss_running / len(test_dataloader_view)
+            test_view_loss_class = test_view_loss_class_running / len(
+                test_dataloader_view
+            )
+            test_view_loss_3d = test_view_loss_3d_running / len(test_dataloader_view)
 
-            # Backward
-            # loss.backward()
-            # Update network parameters
-            # optimizer.step()
-            # loss logging
-            test_view_loss_running += loss.item()
-            test_view_loss_class_running += loss_class.item()
-            test_view_loss_3d_running += loss_3d.item()
-            iteration = epoch * len(test_dataloader_view) + batch_idx
+            print(f"[{epoch:03d}/{batch_idx:05d}] test_view_loss: {test_view_loss:.6f}")
+            print(
+                f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_class: {test_view_loss_class:.6f}"
+            )
+            print(
+                f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_3d: {test_view_loss_3d:.6f}"
+            )
 
-            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                test_view_loss = test_view_loss_running / config["print_every_n"]
-                test_view_loss_class = (
-                    test_view_loss_class_running / config["print_every_n"]
-                )
-                test_view_loss_3d = test_view_loss_3d_running / config["print_every_n"]
+            # test_shape
+            for batch_idx, batch in enumerate(test_dataloader_shape):
+                # Move batch to device
+                ShapeNetDataset.move_batch_to_device(batch, config["device"])
+                x1 = batch["class"]
+                x2 = batch["encoder"]
+                y1 = batch["GT"]
+                y2 = batch["3D"]
 
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_view_loss: {test_view_loss:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_class: {test_view_loss_class:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_3d: {test_view_loss_3d:.6f}"
-                )
+                # Perform forward pass
+                pred_class, pred_3d = model(x1.float(), x2.float())
 
-                test_view_loss_running = 0.0
-                test_view_loss_class_running = 0.0
-                test_view_loss_3d_running = 0.0
+                loss_class = loss_criterion(pred_class, y1)
+                loss_3d = loss_criterion(pred_3d, y2)
+                loss = loss_class + loss_3d
 
-        # test_shape
-        for batch_idx, batch in enumerate(test_dataloader_shape):
-            # Move batch to device
-            ShapeNetDataset.move_batch_to_device(batch, config["device"])
-            x1 = batch["class"]
-            x2 = batch["encoder"]
-            y1 = batch["GT"]
-            y2 = batch["3D"]
+                # loss logging
+                test_shape_loss_running += loss.item()
+                test_shape_loss_class_running += loss_class.item()
+                test_shape_loss_3d_running += loss_3d.item()
 
-            # optimizer.zero_grad()
+            test_shape_loss = test_shape_loss_running / len(test_dataloader_shape)
+            test_shape_loss_class = test_shape_loss_class_running / len(
+                test_dataloader_shape
+            )
+            test_shape_loss_3d = test_shape_loss_3d_running / len(test_dataloader_shape)
 
-            # Perform forward pass
-            pred_class, pred_3d = model(x1.float(), x2.float())
-
-            loss_class = loss_criterion(pred_class, y1)
-            loss_3d = loss_criterion(pred_3d, y2)
-            loss = loss_class + loss_3d
-
-            # Backward
-            # loss.backward()
-            # Update network parameters
-            # optimizer.step()
-            # loss logging
-            test_shape_loss_running += loss.item()
-            test_shape_loss_class_running += loss_class.item()
-            test_shape_loss_3d_running += loss_3d.item()
-
-            iteration = epoch * len(test_dataloader_shape) + batch_idx
-
-            if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
-                test_shape_loss = test_shape_loss_running / config["print_every_n"]
-                test_shape_loss_class = (
-                    test_shape_loss_class_running / config["print_every_n"]
-                )
-                test_shape_loss_3d = (
-                    test_shape_loss_3d_running / config["print_every_n"]
-                )
-
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss: {test_shape_loss:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_class: {test_shape_loss_class:.6f}"
-                )
-                print(
-                    f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_3d: {test_shape_loss_3d:.6f}"
-                )
-
-                test_shape_loss_running = 0.0
-                test_shape_loss_class_running = 0.0
-                test_shape_loss_3d_running = 0.0
+            print(
+                f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss: {test_shape_loss:.6f}"
+            )
+            print(
+                f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_class: {test_shape_loss_class:.6f}"
+            )
+            print(
+                f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_3d: {test_shape_loss_3d:.6f}"
+            )
 
 
 def main(config):
@@ -443,9 +464,7 @@ def main(config):
     model.to(config["device"])
 
     # Create folder for saving checkpoints
-    Path(f'3dml-project/runs/{config["experiment_name"]}').mkdir(
-        exist_ok=True, parents=True
-    )
+    Path(f'./runs/{config["experiment_name"]}').mkdir(exist_ok=True, parents=True)
 
     # Start training
     train(
@@ -456,7 +475,7 @@ def main(config):
         config,
     )
 
-    train(
+    test(
         model,
         test_dataloader_view,
         test_dataloader_shape,
