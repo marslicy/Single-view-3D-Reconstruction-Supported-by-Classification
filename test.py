@@ -33,7 +33,7 @@ assert output_3d.shape == (5, 32, 32, 32)
 # %%
 # test train
 config = {
-    "experiment_name": "train_result",
+    "experiment_name": "test",
     "device": "cpu",  # or 'cuda:0'
     "batch_size": 10,
     "resume_ckpt": None,
@@ -63,7 +63,7 @@ visualize_2d(batch["class"][0])
 # %%
 # test test
 config = {
-    "experiment_name": "train_result",
+    "experiment_name": "test",
     "device": "cpu",  # or 'cuda:0'
     "batch_size": 10,
     "resume_ckpt": None,

@@ -1,6 +1,7 @@
 .DS_Store
 data/ShapeNetRendering
 data/ShapeNetVox32
+runs/test
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
