@@ -15,7 +15,7 @@ elif hostname == "lihuoxingdeMBP.local":
     voxroot = "/Users/chenyangli/Codes/3dml-project/data/ShapeNetVox32"
     imgroot = "/Users/chenyangli/Codes/3dml-project/data/ShapeNetRendering"
     logroot = "./logs"
-elif hostname == "":
-    voxroot = ""
-    imgroot = ""
+elif hostname == "container-4ae511b752-7e696d3b":
+    voxroot = "/root/autodl-tmp/3dml-project/data/ShapeNetVox32"
+    imgroot = "/root/autodl-tmp/3dml-project/data/ShapeNetRendering"
     logroot = "./logs"

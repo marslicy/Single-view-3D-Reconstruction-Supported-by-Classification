@@ -20,18 +20,19 @@ if __name__ == "__main__":
     config = {
         "experiment_name": "train_result",
         "device": "cpu",  # or 'cuda:0'
-        "batch_size": 10,
+        "batch_size": 64,
         "resume_ckpt": None,
         "learning_rate": 0.001,
-        "max_epochs": 1,
-        "print_every_n": 1,
-        "validate_every_n": 1,
-        "val_view": 3,
-        "test_view": 3,
-        "a": 1,
+        "max_epochs": 50,
+        "print_every_n": 100,
+        "validate_every_n": 1000,
+        "val_view": 1,
+        "test_view": 1,
+        "shape_num": 3,
+        "a": 0.5,
         "b": 1,
         "global_feature_size": 128,
-        "local_feature_size": 128,
+        "local_feature_size": 256,
         "num_class": 13,
     }
     if torch.cuda.is_available():
