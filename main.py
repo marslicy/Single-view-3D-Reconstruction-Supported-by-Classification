@@ -2,6 +2,8 @@ import torch
 
 from model.train import main
 
+from model.model import Model
+
 if __name__ == "__main__":
     """
     config (Dict): configuration for training - has the following keys
@@ -19,7 +21,7 @@ if __name__ == "__main__":
 
     config = {
         "experiment_name": "train_result",
-        "device": "cpu",  # or 'cuda:0'
+        "device": "cuda:0",  # or 'cuda:0 cpu'
         "batch_size": 64,
         "resume_ckpt": None,
         "learning_rate": 0.001,
@@ -38,4 +40,12 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         config["device"] = "cuda"
     print("Using device:", config["device"])
-    main(config)
+    
+    # Instantiate model
+    model = Model(
+        config["global_feature_size"], config["local_feature_size"], config["num_class"]
+    )
+    
+    model = main(model,config)
+
+    

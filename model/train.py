@@ -355,7 +355,7 @@ def test(
             )
 
 
-def main(config):
+def main(model,config):
     """
     Function for training DeepSDF
         config (Dict): configuration for training - has the following keys
@@ -414,11 +414,6 @@ def main(config):
         batch_size=config["batch_size"],  # The size of batches is defined here
     )
 
-    # Instantiate model
-    model = Model(
-        config["global_feature_size"], config["local_feature_size"], config["num_class"]
-    )
-
     # Move model to specified device
     model.to(config["device"])
 
@@ -440,3 +435,5 @@ def main(config):
         test_dataloader_shape,
         config,
     )
+    
+    return model
