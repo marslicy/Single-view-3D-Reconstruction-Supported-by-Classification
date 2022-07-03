@@ -1,6 +1,7 @@
 # %%
 # import here
 import torch
+from cv2 import DRAW_MATCHES_FLAGS_DEFAULT
 
 from data.shapenet import ShapeNetDataset
 from data.shapenet_loader import ShapeNetDataLoader
@@ -10,16 +11,17 @@ from util.visualization import visualize_2d, visualize_3d
 
 # %%
 # test trainloader
-split = "view_val"
+split = "train"
 dataset = ShapeNetDataset(split, val_view=3, test_view=3)
+print(len(dataset))
 trainloader = ShapeNetDataLoader(dataset, batch_size=3, shape_num=3)
 
-i = 0
-for batch in trainloader:
-    i += 1
-    # import pdb
-    print(batch.keys())
-    # pdb.set_trace()
+# i = 0
+# for batch in trainloader:
+#     i += 1
+#     # import pdb
+#     print(batch.keys())
+#     # pdb.set_trace()
 
 
 # %%
