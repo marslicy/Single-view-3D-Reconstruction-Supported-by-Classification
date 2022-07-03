@@ -153,9 +153,7 @@ def train(
                     val_view_loss_3d_running += loss_3d_val_v.item()
 
                 val_view_loss = val_view_loss_running / len(val_dataloader_view)
-                val_view_loss_class = val_view_loss_class_running / len(
-                    val_dataloader_view
-                )
+                val_view_loss_class = val_view_loss_class_running / len(val_dataloader_view)
                 val_view_loss_3d = val_view_loss_3d_running / len(val_dataloader_view)
                 if val_view_loss < view_best_loss:
                     torch.save(
@@ -163,31 +161,12 @@ def train(
                         f'./runs/{config["experiment_name"]}/val_view_model_best.ckpt',
                     )
                     view_best_loss = val_view_loss
-<<<<<<< HEAD
                 print(f"[{epoch:03d}/{batch_idx:05d}] val_view_loss: {val_view_loss:.6f} | view_best_loss: {view_best_loss:.6f}")
                 print(f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_class: {val_view_loss_class:.6f}")
                 print(f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_3d: {val_view_loss_3d:.6f}")
                 val_view_loss_running = 0.0
                 val_view_loss_class_running = 0.0
                 val_view_loss_3d_running = 0.0
-=======
-
-                writer.add_scalar(
-                    "View validationloss",
-                    val_view_loss,
-                    iteration,
-                )
-                writer.add_scalar(
-                    "View validation loss (class)",
-                    val_view_loss_class,
-                    iteration,
-                )
-                writer.add_scalar(
-                    "View validation loss (3D)",
-                    val_view_loss_3d,
-                    iteration,
-                )
->>>>>>> fed159d6bdc224e007f506743e6b05fd64d52475
 
                 # val_shape
                 for batch_idx_val_s, batch_val_s in enumerate(val_dataloader_shape):
@@ -210,23 +189,8 @@ def train(
                     val_shape_loss_3d_running += loss_3d_val_s.item()
 
                 val_shape_loss = val_shape_loss_running / len(val_dataloader_shape)
-<<<<<<< HEAD
                 val_shape_loss_class = val_shape_loss_class_running / len(val_dataloader_shape)
                 val_shape_loss_3d = val_shape_loss_3d_running / len(val_dataloader_shape)
-=======
-                val_shape_loss_class = val_shape_loss_class_running / len(
-                    val_dataloader_shape
-                )
-                val_shape_loss_3d = val_shape_loss_3d_running / len(
-                    val_dataloader_shape
-                )
-                print(f"[{epoch:03d}] val_shape_loss: {val_shape_loss:.6f}")
-                print(f"[{epoch:03d}] val_shape_loss_class: {val_shape_loss_class:.6f}")
-                print(f"[{epoch:03d}] val_shape_loss_3d: {val_shape_loss_3d:.6f}")
-                val_shape_loss_running = 0.0
-                val_shape_loss_class_running = 0.0
-                val_shape_loss_3d_running = 0.0
->>>>>>> fed159d6bdc224e007f506743e6b05fd64d52475
                 if val_shape_loss < shape_best_loss:
                     torch.save(
                         model.state_dict(),
@@ -240,25 +204,7 @@ def train(
                 val_shape_loss_class_running = 0.0
                 val_shape_loss_3d_running = 0.0
 
-<<<<<<< HEAD
                 model.train()
-=======
-                writer.add_scalar(
-                    "Shape validation loss",
-                    val_shape_loss,
-                    iteration,
-                )
-                writer.add_scalar(
-                    "Shape validation  loss (class)",
-                    val_shape_loss_class,
-                    iteration,
-                )
-                writer.add_scalar(
-                    "Shape validation  loss (3D)",
-                    val_shape_loss_3d,
-                    iteration,
-                )
->>>>>>> fed159d6bdc224e007f506743e6b05fd64d52475
 
         # lr scheduler update
         scheduler.step()
