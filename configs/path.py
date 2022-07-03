@@ -4,8 +4,8 @@ import socket
 username = getpass.getuser()
 
 hostname = socket.gethostname()
-voxroot = "/home/yang/GitHub/ml3d_final_dataset/ShapeNetVox32"
-imgroot = "/home/yang/GitHub/ml3d_final_dataset/ShapeNetRendering"
+voxroot = "/Users/penny/Desktop/Semester 2/ML3D/project_code/3dml-project/data/ShapeNet/ShapeNetVox32"
+imgroot = "/Users/penny/Desktop/Semester 2/ML3D/project_code/3dml-project/data/ShapeNet/ShapeNetRendering"
 logroot = "./logs"
 if hostname == "iWorkstation":
     voxroot = "/home/yang/Codes/ml3d_final_dataset/ShapeNetVox32"
