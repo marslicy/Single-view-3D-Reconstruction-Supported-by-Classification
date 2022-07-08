@@ -26,3 +26,11 @@
   - Baseline version:reshape to (128, 4, 4, 4), (5, 2), (5, 2), (5, 2) in format (kernel_size, stride)
   - version 1: reshape to (128, 4, 4, 4), (1, 2), (3, 2), (4, 2) in format (kernel_size, stride)
   - version 2: reshape to (8192, 1, 1, 1), (5, 2), (5, 2, 1), (5, 2, 1) in format (kernel_size, stride, (padding))
+
+### 01. 07
+- Based on the networks of the paper, our network can be trained. Problem: 1) gradient descent too slow; 2) classification trained faster than 3d reconstruction. Potential solution: pretrain the classification network at first, give the classification a very small loss when training with the reconstruction (Chenyang Li)
+  reference: Xie H, Yao H, Sun X, et al. Pix2vox: Context-aware 3d reconstruction from single and multi-view images[C]//Proceedings of the IEEE/CVF international conference on computer vision. 2019: 2690-2698.
+
+## 08. 07
+- The classification can't work.
+- If use pretrained resnet18: the work can learn, but loss is large. (Chenyang Li)

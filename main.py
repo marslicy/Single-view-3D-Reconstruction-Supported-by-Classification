@@ -1,8 +1,7 @@
 import torch
 
-from model.train import main
-
 from model.model import Model
+from model.train import main
 
 if __name__ == "__main__":
     """
@@ -20,9 +19,9 @@ if __name__ == "__main__":
     """
 
     config = {
-        "experiment_name": "train_result",
+        "experiment_name": "classification pretrain",
         "device": "cuda:0",  # or 'cuda:0 cpu'
-        "batch_size": 64,
+        "batch_size": 150,
         "resume_ckpt": None,
         "learning_rate": 0.001,
         "max_epochs": 50,
@@ -33,19 +32,21 @@ if __name__ == "__main__":
         "shape_num": 3,
         "a": 0.5,
         "b": 1,
-        "global_feature_size": 128,
-        "local_feature_size": 256,
+        "global_feature_size": 512,
+        "local_feature_size": 128,
         "num_class": 13,
     }
     if torch.cuda.is_available():
         config["device"] = "cuda"
     print("Using device:", config["device"])
-    
+
     # Instantiate model
     model = Model(
         config["global_feature_size"], config["local_feature_size"], config["num_class"]
     )
-    
-    model = main(model,config)
+    model.set_pretrain(pretrain=True)
 
-    
+    # pretraining
+    config["a"] = 1
+    config["b"] = 0
+    model = main(model, config)
