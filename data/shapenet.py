@@ -1,11 +1,12 @@
 import json
+import os
 from pathlib import Path
 
 import cv2
 import numpy as np
 import torch
 
-from configs.path import imgroot, voxroot
+from configs.path import imgroot, priorroot, voxroot
 from split.binvox_rw import read_as_3d_array
 
 
@@ -17,6 +18,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
     num_classes = 13  # currently we have 13 classes
     vox_path = voxroot
     img_path = imgroot
+    prior_path = priorroot
     class_name_mapping = json.loads(Path("split/shape_info.json").read_text())
     classes = sorted(class_name_mapping.keys())
 
@@ -155,3 +157,48 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         img = cv2.resize(img, (127, 127))
         img = np.transpose(img, (2, 0, 1))
         return img
+
+    def get_k_prior_by_category(self, category, k):
+        """
+        Randomly selected k shapes in the category and calculate the averange shape
+
+        Args:
+            category (int): must be an integer in the range [0, num_shape)
+            number (int): must be a positive integer
+
+        Returns:
+            k_prior(np.ndarray): averange shape in shape (3, 32, 32, 32)
+        """
+        assert category in range(self.num_classes), "Category out of range"
+        assert isinstance(k, int) & (
+            k > 0
+        ), "The number of k should be a positive integer"
+        category_id = self.classes[category]
+        shape_ids = os.listdir(f"{self.vox_path}/{category_id}")
+        seleted = np.random.choice(len(shape_ids), size=k, replace=False)
+        k_prior = np.zeros((3, 32, 32, 32), dtype=np.float32)
+        for idx in seleted:
+            k_prior += self.get_shape_voxels(f"{category_id}/{shape_ids[idx]}")
+        k_prior = k_prior / k
+        return k_prior
+
+    def get_full_prior(self):
+        """
+        Calculate the average shape for all categories
+
+        Returns:
+            full_prior(np.ndarray): average shapes of all categories in shape (num_classes, 3, 32, 32, 32)
+        """
+        full_prior = []
+        for i in range(self.num_classes):
+            category_id = self.classes[i]
+            shape_ids = os.listdir(f"{self.vox_path}/{category_id}")
+            full_prior_single = np.zeros((3, 32, 32, 32), dtype=np.float32)
+            for shape_id in shape_ids:
+                # for mac user please uncomment
+                if shape_id == ".DS_Store":
+                    continue
+                full_prior_single += self.get_shape_voxels(f"{category_id}/{shape_id}")
+            full_prior_single = full_prior_single / len(shape_ids)
+            full_prior.append(full_prior_single)
+        return np.array(full_prior)

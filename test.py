@@ -114,3 +114,23 @@ train.test(
     config,
 )
 # %%
+# test k prior
+from data.shapenet import ShapeNetDataset
+from util.visualization import visualize_2d, visualize_3d
+
+split = "view_val"
+dataset = ShapeNetDataset(split, val_view=3, test_view=3)
+
+k_prior = dataset.get_k_prior_by_category(category=0, k=1)
+visualize_3d(k_prior, k_prior, "k-prior")
+
+# %%
+# test full prior
+from data.shapenet import ShapeNetDataset
+from util.visualization import visualize_2d, visualize_3d
+
+split = "view_val"
+dataset = ShapeNetDataset(split, val_view=3, test_view=3)
+full_prior = dataset.get_full_prior()
+assert full_prior.shape == (13, 3, 32, 32, 32)
+# %%
