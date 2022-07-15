@@ -1,5 +1,5 @@
 import json
-import os
+import random
 from pathlib import Path
 
 import cv2
@@ -22,73 +22,56 @@ class ShapeNetDataset(torch.utils.data.Dataset):
     class_name_mapping = json.loads(Path("split/shape_info.json").read_text())
     classes = sorted(class_name_mapping.keys())
 
-    def __init__(self, split, val_view=2, test_view=2):
+    def __init__(self, split, prior_k=10):
         """
-        :param split: one of 'train', 'view_val', 'shape_val', 'view_test', 'test_shape' - for training, validation or overfitting split
+        :param split: one of 'train', 'shape_test', 'shape_val', "new_categories"
         """
         super().__init__()
         assert split in [
             "train",
-            "view_val",
             "shape_val",
-            "view_test",
             "shape_test",
+            "new_categories",
         ]
 
-        # keep track of shapes based on split, while view_val and view_test uses train split
-        if split in ["train", "shape_val", "shape_test"]:
-            self.items = Path(f"split/{split}.txt").read_text().splitlines()
-        else:
-            self.items = Path("split/train.txt").read_text().splitlines()
-            if split == "view_test":
-                self.img_counter = ShapeNetDataset.idx_generator(test_view)
-            if split == "view_val":
-                self.img_counter = ShapeNetDataset.idx_generator(val_view)
+        self.items = Path(f"split/{split}.txt").read_text().splitlines()
 
         self.split = split  # split can be used in other places
-        # TODO define the number of image in  view_val and view_test. The overall image of a shape is 24, therefore the remaining part will be assigned to train
-        self.val_view = val_view
-        self.test_view = test_view
-        self.train_num = 24 - val_view - test_view
+
+        self.split_dict = self.load_shape_as_dict()
+
+        # determine the prior type
+        self.prior_k = prior_k
+        if self.prior_k != 0:
+            self.get_prior = self.get_k_prior_by_category
+        else:
+            self.get_prior = self.get_full_prior
 
     def __getitem__(self, index):
         """
         we implement the following splits for the dataset: train, view_val, shape_val, overfit_shape, view
         :param index: index of the dataset sample that will be returned
         :return: a dictionary of data corresponding to the shape. In particular, this dictionary has keys
-                 "name", given as "<shape_category>/<shape_identifier>",
-                 "voxel", a 1x32x32x32 numpy float32 array representing the shape
-                 "label", a number in [0, 12] representing the class of the shape
+                 "3D_prior", a 32x32x32 numpy ndarray
+                 "GT", a 32x32x32 numpy ndarray
+                 "Image", 3x127x127 numpy ndarray
+                 "ID", string that in form "category_id/shape_id"
         """
         item = self.items[index]
-        item_class = item.split("/")[0]
+        category = item.split("/")[0]
         # read voxels from binvox format on disk as 3d numpy arrays
-        voxels = self.get_shape_voxels(item)
+        voxel = self.get_shape_voxels(item)
 
-        # implement the different geting logic here
+        prior = self.get_prior(category)
 
-        if self.split in ["train", "shape_val", "shape_test"]:
-            enc_img = self.get_image_data(item)
-            cls_img = self.get_image_data(item)
-        elif self.split in ["view_val", "view_test"]:
-            idx = next(self.img_counter)
-            enc_img = self.get_image_by_idx(item, idx)
-            cls_img = self.get_image_by_idx(item, idx)
+        image = self.get_image_data(item)
 
         return {
-            "class": cls_img,
-            "encoder": enc_img,
-            "GT": ShapeNetDataset.classes.index(item_class),
-            "3D": voxels,
+            "3D_prior": prior,
+            "Image": image,
+            "GT": voxel,
             "ID": item,
         }
-
-    @staticmethod
-    def idx_generator(length):
-        i = 0
-        while True:
-            yield i % length
-            i += 1
 
     def __len__(self):
         """
@@ -102,10 +85,9 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         Utility method for moving all elements of the batch to a device
         :return: None, modifies batch inplace
         """
-        batch["class"] = batch["class"].to(device)
-        batch["encoder"] = batch["encoder"].to(device)
+        batch["3D_prior"] = batch["3D_prior"].to(device)
+        batch["Image"] = batch["Image"].to(device)
         batch["GT"] = batch["GT"].to(device)
-        batch["3D"] = batch["3D"].to(device)
 
     @staticmethod
     def get_shape_voxels(shapenetid):
@@ -123,11 +105,9 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
     def get_image_data(self, shapenetid):
 
-        assert self.split in ["train", "shape_val", "shape_test"]
-        if self.split == "train":
-            idx = np.random.randint(0, self.train_num)
-        else:
-            idx = np.random.randint(0, 24)
+        assert self.split in ["train", "shape_val", "shape_test", "new_categories"]
+
+        idx = np.random.randint(0, 24)
 
         img_idx = str(idx).zfill(2)
         category_id, shape_id = shapenetid.split("/")
@@ -139,66 +119,71 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         return img
 
-    def get_image_by_idx(self, shapenetid, idx):
-        # the index should be [0, split_length]
-
-        assert self.split in ["view_val", "view_test"]
-        if self.split == "view_val":
-            # index of view_val should be in [train_end , train_end + val_length]
-            img_idx = idx + self.train_num
-        else:
-            # index of view_val should be in [self.train_num + self.val_view , 24]
-            img_idx = idx + self.train_num + self.val_view
-
-        img_idx = str(idx).zfill(2)
-        category_id, shape_id = shapenetid.split("/")
-        path = f"{imgroot}/{category_id}/{shape_id}/rendering/{img_idx}.png"
-        img = cv2.imread(path)
-        img = cv2.resize(img, (127, 127))
-        img = np.transpose(img, (2, 0, 1))
-        return img
-
-    def get_k_prior_by_category(self, category, k):
+    def get_k_prior_by_category(self, category):
         """
-        Randomly selected k shapes in the category and calculate the averange shape
+        Randomly selected k shapes in the category and calculate the average shape
 
         Args:
-            category (int): must be an integer in the range [0, num_shape)
+            item (string): must be an integer in the range [0, num_shape)
             number (int): must be a positive integer
 
         Returns:
-            k_prior(np.ndarray): averange shape in shape (3, 32, 32, 32)
+            k_prior(np.ndarray): averange shape in shape (32, 32, 32)
         """
-        assert category in range(self.num_classes), "Category out of range"
-        assert isinstance(k, int) & (
-            k > 0
-        ), "The number of k should be a positive integer"
-        category_id = self.classes[category]
-        shape_ids = os.listdir(f"{self.vox_path}/{category_id}")
-        seleted = np.random.choice(len(shape_ids), size=k, replace=False)
-        k_prior = np.zeros((3, 32, 32, 32), dtype=np.float32)
-        for idx in seleted:
-            k_prior += self.get_shape_voxels(f"{category_id}/{shape_ids[idx]}")
-        k_prior = k_prior / k
+
+        # sample from the given category
+        all = self.split_dict[category]
+        sampled = random.sample(all, self.prior_k)
+
+        k_shapes = np.empty(
+            [1, 32, 32, 32]
+        )  # initialize the full_shape array, first entry will be deleted later
+        for shapeid in sampled:
+            # get every shape
+            np_shape = np.array(self.get_shape_voxels(f"{category}/{shapeid}"))
+            np_shape = np_shape[None, :, :, :]
+            # stack shapes into [n,32,32,32]
+            all_shapes = np.concatenate((k_shapes, np_shape), axis=0)
+
+        # delete the initialization
+        all_shapes = k_shapes[1:]
+        # get mean from it
+        k_prior = np.mean(all_shapes, axis=0)
+
         return k_prior
 
-    def get_full_prior(self):
+    def get_full_prior(self, category):
         """
-        Calculate the average shape for all categories
+        Read the full prior computed in advanced from the whole training set.
+        Arg
+            category(string): the category
 
-        Returns:
-            full_prior(np.ndarray): average shapes of all categories in shape (num_classes, 3, 32, 32, 32)
+        Returns
+            full_priors(np.ndarray): the shape prior we want by [32,32,32]
         """
-        full_prior = []
-        for i in range(self.num_classes):
-            category_id = self.classes[i]
-            shape_ids = os.listdir(f"{self.vox_path}/{category_id}")
-            full_prior_single = np.zeros((3, 32, 32, 32), dtype=np.float32)
-            for shape_id in shape_ids:
-                # for mac user please uncomment
-                if shape_id == ".DS_Store":
-                    continue
-                full_prior_single += self.get_shape_voxels(f"{category_id}/{shape_id}")
-            full_prior_single = full_prior_single / len(shape_ids)
-            full_prior.append(full_prior_single)
-        return np.array(full_prior)
+
+        prior_dir = "data/prior"
+
+        full_priors = np.load(f"{prior_dir}/{category}.npy")
+
+        return full_priors
+
+    def load_shape_as_dict(self):
+        """
+        Read the split as dictionary in classes, help to simplify the get_k_prior_by_category process
+
+        Arg
+            self.items(list): items
+
+        Returns
+            split_dict(dictionary): the dictionary
+        """
+        split_dict = {}
+        for item in self.items:
+            category_id, shape_id = item.split("/")
+            if category_id not in split_dict.keys():
+                split_dict[category_id] = [shape_id]
+            else:
+                split_dict[category_id].append(shape_id)
+
+        return split_dict

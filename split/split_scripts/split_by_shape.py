@@ -10,7 +10,6 @@ primary goal: save all the cateid/shapeid into a txt
 1. randomly choose some in the list as the val&test set
 """
 
-
 # we first split the shape to train and test
 train_list = []
 test_list = []
@@ -40,30 +39,29 @@ for cat in os.listdir(voxroot):
         test_list.append(sub_test_list)
         overfit_list.append(sub_overfit_list)
 
-
-with open("split/train_shape.txt", "w") as file:
+with open("split/train_shape_v2.txt", "w") as file:
     for ls in train_list:
         for item in ls:
             file.write(item)
             file.write("\n")
 
-with open("split/test_shape.txt", "w") as file:
+with open("split/test_shape_v2.txt", "w") as file:
     for ls in test_list:
         for item in ls:
             file.write(item)
             file.write("\n")
 
-with open("split/val_shape.txt", "w") as file:
+with open("split/val_shape_v2.txt", "w") as file:
     for ls in val_list:
         for item in ls:
             file.write(item)
             file.write("\n")
 
-with open("split/overfit_shape.txt", "w") as file:
-    for ls in overfit_list:
-        for item in ls:
-            file.write(item)
-            file.write("\n")
+# with open("split/overfit_shape.txt", "w") as file:
+#    for ls in overfit_list:
+#        for item in ls:
+#            file.write(item)
+#            file.write("\n")
 
 # %%
 """

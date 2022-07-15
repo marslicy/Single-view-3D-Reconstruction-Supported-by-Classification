@@ -26,3 +26,8 @@
   - Baseline version:reshape to (128, 4, 4, 4), (5, 2), (5, 2), (5, 2) in format (kernel_size, stride)
   - version 1: reshape to (128, 4, 4, 4), (1, 2), (3, 2), (4, 2) in format (kernel_size, stride)
   - version 2: reshape to (8192, 1, 1, 1), (5, 2), (5, 2, 1), (5, 2, 1) in format (kernel_size, stride, (padding))
+
+
+### 13. 07 
+
+- Implement the new dataset and dataloader for baseline model (Jiaye Yang)

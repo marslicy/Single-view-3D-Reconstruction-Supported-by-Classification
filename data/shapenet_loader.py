@@ -16,9 +16,7 @@ class ShapeNetDataLoader(DataLoader):
     Defines an iterable batch-sampler over a given dataset
     """
 
-    def __init__(
-        self, dataset, batch_size=1, shape_num=3, shuffle=False, drop_last=False
-    ):
+    def __init__(self, dataset, batch_size=1, shuffle=False, drop_last=False):
         """
         :param dataset: dataset from which to load the data
         :param batch_size: how many samples per batch to load
@@ -32,15 +30,10 @@ class ShapeNetDataLoader(DataLoader):
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.drop_last = drop_last
-        self.shape_num = shape_num
         # use this split to set shapenum
         self.split = self.dataset.split
         self.val_view = self.dataset.val_view
         self.test_view = self.dataset.test_view
-        if self.split == "view_val":
-            self.shape_num = self.val_view
-        elif self.split == "view_test":
-            self.shape_num = self.test_view
 
     def __iter__(self):
         def combine_batch_dicts(batch):
