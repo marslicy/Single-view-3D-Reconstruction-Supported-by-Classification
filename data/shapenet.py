@@ -142,13 +142,16 @@ class ShapeNetDataset(torch.utils.data.Dataset):
             # get every shape
             np_shape = np.array(self.get_shape_voxels(f"{category}/{shapeid}"))
             np_shape = np_shape[None, :, :, :]
+            # print(np_shape.shape)
             # stack shapes into [n,32,32,32]
-            all_shapes = np.concatenate((k_shapes, np_shape), axis=0)
+            k_shapes = np.concatenate((k_shapes, np_shape), axis=0)
 
         # delete the initialization
         all_shapes = k_shapes[1:]
+        assert all_shapes.shape == (self.prior_k, 32, 32, 32)
         # get mean from it
         k_prior = np.mean(all_shapes, axis=0)
+        assert k_prior.shape == (32, 32, 32)
 
         return k_prior
 
