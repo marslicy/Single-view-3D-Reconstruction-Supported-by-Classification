@@ -135,23 +135,21 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         all = self.split_dict[category]
         sampled = random.sample(all, self.prior_k)
 
-        k_shapes = np.empty(
-            [1, 32, 32, 32]
-        )  # initialize the full_shape array, first entry will be deleted later
+        # initialize the full_shape array, first entry will be deleted later
+        k_shapes = np.empty([1, 32, 32, 32])
         for shapeid in sampled:
             # get every shape
             np_shape = np.array(self.get_shape_voxels(f"{category}/{shapeid}"))
             np_shape = np_shape[None, :, :, :]
-            # print(np_shape.shape)
             # stack shapes into [n,32,32,32]
             k_shapes = np.concatenate((k_shapes, np_shape), axis=0)
 
         # delete the initialization
         all_shapes = k_shapes[1:]
-        assert all_shapes.shape == (self.prior_k, 32, 32, 32)
+        # assert all_shapes.shape == (self.prior_k, 32, 32, 32)
         # get mean from it
-        k_prior = np.mean(all_shapes, axis=0)
-        assert k_prior.shape == (32, 32, 32)
+        k_prior = np.expand_dims(np.mean(all_shapes, axis=0), axis=0)
+        assert k_prior.shape == (1, 32, 32, 32)
 
         return k_prior
 
