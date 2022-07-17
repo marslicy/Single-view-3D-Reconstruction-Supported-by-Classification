@@ -1,13 +1,16 @@
+import os
+import sys
 from pathlib import Path
 
 import numpy as np
 from tqdm import tqdm
 
+from configs.path import priorroot, voxroot
 from split.binvox_rw import read_as_3d_array
 
-voxroot = "/home/yang/Codes/ml3d_final_dataset/ShapeNetVox32"
 # load the shapes in dictionary, class as the key, all shapes as a list
 
+sys.path.append(os.getcwd())
 file = "split/train.txt"
 train = Path(file).read_text().splitlines()
 
@@ -34,10 +37,6 @@ def get_shape_voxels(category_id, shape_id, vox_path=voxroot):
 
 
 # Compute all the priors
-
-save_dir = "data/prior"
-
-
 for key in shape_dict.keys():
     all_shapes = np.empty(
         [1, 32, 32, 32]
@@ -54,4 +53,4 @@ for key in shape_dict.keys():
     # get mean from it
     full_prior = np.mean(all_shapes, axis=0)
     # save it with the name of category_id at the prior dir
-    np.save(f"{save_dir}/{key}.npy", full_prior)
+    np.save(f"{priorroot}/{key}.npy", full_prior)

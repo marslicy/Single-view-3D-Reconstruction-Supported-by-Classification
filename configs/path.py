@@ -16,4 +16,5 @@ if hostname == "iWorkstation":
 elif username == "chenyangli":
     voxroot = "/Users/chenyangli/Codes/3dml-project/data/ShapeNetVox32"
     imgroot = "/Users/chenyangli/Codes/3dml-project/data/ShapeNetRendering"
+    priorroot = "/Users/chenyangli/Codes/3dml-project/data/prior"
     logroot = "./logs"

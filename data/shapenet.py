@@ -60,11 +60,11 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         item = self.items[index]
         category = item.split("/")[0]
         # read voxels from binvox format on disk as 3d numpy arrays
-        voxel = self.get_shape_voxels(item)
+        voxel = torch.from_numpy(self.get_shape_voxels(item)).float()
 
-        prior = self.get_prior(category)
+        prior = torch.from_numpy(self.get_prior(category)).float()
 
-        image = self.get_image_data(item)
+        image = torch.from_numpy(self.get_image_data(item)).float()
 
         return {
             "3D_prior": prior,
@@ -149,7 +149,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         # assert all_shapes.shape == (self.prior_k, 32, 32, 32)
         # get mean from it
         k_prior = np.expand_dims(np.mean(all_shapes, axis=0), axis=0)
-        assert k_prior.shape == (1, 32, 32, 32)
+        # assert k_prior.shape == (1, 32, 32, 32)
 
         return k_prior
 
