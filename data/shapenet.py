@@ -34,7 +34,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
             "new_categories",
         ]
 
-        self.items = Path(f"split/{split}.txt").read_text().splitlines()
+        self.items = Path(f"./split/{split}.txt").read_text().splitlines()
 
         self.split = split  # split can be used in other places
 
