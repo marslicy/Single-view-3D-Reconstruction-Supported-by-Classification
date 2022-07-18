@@ -1,5 +1,6 @@
 import torch
 
+from model.model import Model
 from model.train import main
 
 if __name__ == "__main__":
@@ -18,23 +19,18 @@ if __name__ == "__main__":
     """
 
     config = {
-        "experiment_name": "train_result",
+        "experiment_name": "LR_0.1",
         "device": "cpu",  # or 'cuda:0'
-        "batch_size": 10,
+        "batch_size": 128,
+        "prior_k": 5,
         "resume_ckpt": None,
-        "learning_rate": 0.0001,
-        "max_epochs": 1,
-        "print_every_n": 1,
-        "validate_every_n": 1,
-        "val_view": 3,
-        "test_view": 3,
-        "a": 1,
-        "b": 1,
-        "global_feature_size": 128,
-        "local_feature_size": 128,
-        "num_class": 13,
+        "learning_rate": 0.1,
+        "max_epochs": 10,
+        "print_every_n": 100,
+        "validate_every_n": 1000,
     }
     if torch.cuda.is_available():
-        config["device"] = "cuda"
+        config["device"] = "cuda:0"
     print("Using device:", config["device"])
-    main(config)
+    model = Model()
+    model = main(model, config)

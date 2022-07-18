@@ -1,7 +1,5 @@
 from datetime import datetime
-from pathlib import Path
 from typing import Dict
-import numpy as np
 
 import numpy as np
 import torch
@@ -10,6 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from data.shapenet import ShapeNetDataset
 from model.model import Model
+
 
 def train(
     model: Model,
@@ -41,30 +40,30 @@ def train(
     loss_criterion.to(config["device"])
 
     optimizer = torch.optim.Adadelta(model.parameters(), config["learning_rate"])
-#     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5) 
+    #     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=500, gamma=0.5)
 
     now = datetime.now()
     dt_string = now.strftime("%m-%d-%H-%M")
     writer = SummaryWriter(f'runs/{dt_string}-{config["experiment_name"]}/log')
 
     model.train()
-    
+
     best_loss_val = np.inf
 
     train_loss_running = 0.0
 
     for epoch in range(config["max_epochs"]):
-#         print("-"*128)
-        print("Epoch %d/%.0f" %(epoch+1, config["max_epochs"]))
+        #         print("-"*128)
+        print("Epoch %d/%.0f" % (epoch + 1, config["max_epochs"]))
         for batch_idx, batch in enumerate(train_dataloader):
-            
+
             ShapeNetDataset.move_batch_to_device(batch, config["device"])
             input_images = batch["Image"]
             input_voxels = batch["3D_prior"]
             target_voxels = batch["GT"]
-            
+
             optimizer.zero_grad()
-            
+
             pred = model(input_voxels, input_images)
 
             loss = loss_criterion(pred, target_voxels)
@@ -87,10 +86,11 @@ def train(
 
                 train_loss_running = 0.0
 
-
-            if iteration % config["validate_every_n"] == (config["validate_every_n"] - 1):
+            if iteration % config["validate_every_n"] == (
+                config["validate_every_n"] - 1
+            ):
                 model.eval()
-                loss_val = 0.
+                loss_val = 0.0
                 for batch_idx_val, batch_val in enumerate(val_dataloader):
                     # Move batch to device
                     ShapeNetDataset.move_batch_to_device(batch_val, config["device"])
@@ -99,21 +99,26 @@ def train(
                     target_voxels = batch["GT"]
 
                     with torch.no_grad():
-                        pred_val = model(input_voxels, input_images) 
+                        pred_val = model(input_voxels, input_images)
                         loss_val += loss_criterion(pred_val, target_voxels)
 
                 loss_val /= len(val_dataloader)
 
                 if loss_val < best_loss_val:
-                    torch.save(model.state_dict(), f'./runs/{config["experiment_name"]}/model_best.ckpt')
+                    torch.save(
+                        model.state_dict(),
+                        f'runs/{dt_string}-{config["experiment_name"]}/model_best.ckpt',
+                    )
                     best_loss_val = loss_val
-                print(f"[{epoch:03d}/{batch_idx:05d}] loss_val: {loss_val:.6f} | best_loss_val: {best_loss_val:.6f}")
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] loss_val: {loss_val:.6f} | best_loss_val: {best_loss_val:.6f}"
+                )
                 writer.add_scalar(
                     "Validation loss",
                     loss_val,
                     iteration,
                 )
-                
+
                 model.train()
 
 
@@ -159,18 +164,19 @@ def test(
             # Compute IoU
             iou_running = iou(target_voxels, pred_test, threshold=0.4)
             iou_test += iou_running
-        
+
         loss_test /= len(test_dataloader)
         iou_test /= len(test_dataloader)
 
         print(f"loss_test: {loss_test:.6f} | IoU_test: {iou_test:.6f}")
+
 
 def iou(true_voxels, pred_voxels, threshold=0.4):
     bool_true_voxels = true_voxels > threshold
     bool_pred_voxels = pred_voxels > threshold
     total_union = (bool_true_voxels | bool_pred_voxels).sum()
     total_intersection = (bool_true_voxels & bool_pred_voxels).sum()
-    return (total_intersection / total_union)
+    return total_intersection / total_union
 
 
 def main(model, config):
@@ -190,25 +196,28 @@ def main(model, config):
     """
 
     # create dataloaders
-    train_dataset = ShapeNetDataset("train")
+    train_dataset = ShapeNetDataset("train", config["prior_k"])
     train_dataloader = DataLoader(
         train_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
         shuffle=True,
+        num_workers=4,
     )
 
-    val_dataset = ShapeNetDataset("shape_val")
+    val_dataset = ShapeNetDataset("shape_val", config["prior_k"])
     val_dataloader = DataLoader(
         val_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
         shuffle=True,
+        num_workers=4,
     )
 
-    test_dataset = ShapeNetDataset("shape_test")
+    test_dataset = ShapeNetDataset("shape_test", config["prior_k"])
     test_dataloader = DataLoader(
         test_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
         shuffle=True,
+        num_workers=4,
     )
 
     # Instantiate model
@@ -216,9 +225,6 @@ def main(model, config):
 
     # Move model to specified device
     model.to(config["device"])
-
-    # Create folder for saving checkpoints
-    Path(f'./runs/{config["experiment_name"]}').mkdir(exist_ok=True, parents=True)
 
     # Start training
     train(
@@ -235,4 +241,4 @@ def main(model, config):
         config,
     )
 
-    return model    
+    return model
