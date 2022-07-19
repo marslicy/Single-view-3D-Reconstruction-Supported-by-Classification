@@ -19,18 +19,40 @@ if __name__ == "__main__":
     """
 
     config = {
-        "experiment_name": "k0",
+        "experiment_name": "full_prior_1_iter",
         "device": "cpu",  # or 'cuda:0'
         "batch_size": 128,
         "prior_k": "full",
+        "iter": 1,
         "resume_ckpt": None,
-        "learning_rate": 0.01,
-        "max_epochs": 300,
+        "learning_rate": 0.1,
+        "max_epochs": 100,
         "print_every_n": 100,
-        "validate_every_n": 1000,
+        "validate_every_n": 200,
     }
     if torch.cuda.is_available():
         config["device"] = "cuda:0"
     print("Using device:", config["device"])
+
+    print("full_prior_1_iter")
+    model = Model()
+    model = main(model, config)
+
+    print("empty_prior_1_iter")
+    config["prior_k"] = 0
+    config["experiment_name"] = "empty_prior_1_iter"
+    model = Model()
+    model = main(model, config)
+
+    print("1_prior_1_iter")
+    config["prior_k"] = 1
+    config["experiment_name"] = "1_prior_1_iter"
+    model = Model()
+    model = main(model, config)
+
+    print("1_prior_2_iter")
+    config["iter"] = 2
+    config["prior_k"] = 1
+    config["experiment_name"] = "1_prior_2_iter"
     model = Model()
     model = main(model, config)
