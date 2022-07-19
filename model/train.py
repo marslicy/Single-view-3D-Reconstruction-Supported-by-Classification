@@ -111,7 +111,7 @@ def train(
                 if loss_val < best_loss_val:
                     torch.save(
                         model.state_dict(),
-                        f'runs/{dt_string}-{config["experiment_name"]}/model_best.ckpt',
+                        f'runs/{dt_string}-{config["experiment_name"]}/{dt_string}-{config["experiment_name"]}.ckpt',
                     )
                     best_loss_val = loss_val
                 print(
