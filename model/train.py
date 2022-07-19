@@ -36,6 +36,11 @@ def train(
                        'print_every_n': print train loss every n iterations
                        'validate_every_n': print validation loss and validation accuracy every n iterations
     """
+    #early stop
+    last_loss = 100
+    patience = 3
+    trigger_times = 0
+
     loss_criterion = torch.nn.BCELoss()
     loss_criterion.to(config["device"])
 
@@ -108,6 +113,19 @@ def train(
 
                 loss_val /= len(val_dataloader)
 
+                #early stop
+                if loss_val > last_loss:
+                    trigger_times += 1
+
+                    if trigger_times >= patience:
+                        print('Early stopping!')
+                        return model
+
+                else:
+                    trigger_times = 0
+
+                last_loss = loss_val
+
                 if loss_val < best_loss_val:
                     torch.save(
                         model.state_dict(),
@@ -124,6 +142,7 @@ def train(
                 )
 
                 model.train()
+    return model
 
 
 def test(
@@ -141,6 +160,7 @@ def test(
     Retruns:
         tbd
     """
+
     loss_criterion = torch.nn.BCELoss()
     loss_criterion.to(config["device"])
 
