@@ -99,7 +99,7 @@ class Model(nn.Module):
 
         vox_emb = self.vox_enc(prior)
         image_emb = self.image_enc(image)
-        pred_3d = self.shape_dec(vox_emb + image_emb).squeeze(1)
+        pred_3d = self.shape_dec(vox_emb + image_emb)
         return pred_3d
 
 

@@ -64,7 +64,9 @@ def train(
 
             optimizer.zero_grad()
 
-            pred = model(input_voxels, input_images)
+            for _ in range(config["iter"]):
+                input_voxels = model(input_voxels, input_images)
+            pred = input_voxels.squeeze(1)
 
             loss = loss_criterion(pred, target_voxels)
             loss.backward()
@@ -99,7 +101,9 @@ def train(
                     target_voxels = batch["GT"]
 
                     with torch.no_grad():
-                        pred_val = model(input_voxels, input_images)
+                        for _ in range(config["iter"]):
+                            input_voxels = model(input_voxels, input_images)
+                        pred_val = input_voxels.squeeze(1)
                         loss_val += loss_criterion(pred_val, target_voxels)
 
                 loss_val /= len(val_dataloader)
@@ -156,7 +160,9 @@ def test(
             target_voxels = batch["GT"]
 
             # Perform forward pass
-            pred_test = model(input_voxels, input_images)
+            for _ in range(config["iter"]):
+                input_voxels = model(input_voxels, input_images)
+            pred_test = input_voxels.squeeze(1)
 
             loss_test_running = loss_criterion(pred_test, target_voxels)
             loss_test += loss_test_running
