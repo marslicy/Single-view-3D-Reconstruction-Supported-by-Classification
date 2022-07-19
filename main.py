@@ -19,13 +19,13 @@ if __name__ == "__main__":
     """
 
     config = {
-        "experiment_name": "LR_0.1",
+        "experiment_name": "k0",
         "device": "cpu",  # or 'cuda:0'
         "batch_size": 128,
-        "prior_k": 5,
+        "prior_k": "full",
         "resume_ckpt": None,
-        "learning_rate": 0.1,
-        "max_epochs": 10,
+        "learning_rate": 0.01,
+        "max_epochs": 300,
         "print_every_n": 100,
         "validate_every_n": 1000,
     }

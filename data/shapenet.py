@@ -42,8 +42,11 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         # determine the prior type
         self.prior_k = prior_k
-        if self.prior_k != 0:
-            self.get_prior = self.get_k_prior_by_category
+        if isinstance(self.prior_k, int):
+            if self.prior_k > 0:
+                self.get_prior = self.get_k_prior_by_category
+            elif self.prior_k == 0:
+                self.get_prior = self.get_empty_prior
         else:
             self.get_prior = self.get_full_prior
 
@@ -128,7 +131,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
             number (int): must be a positive integer
 
         Returns:
-            k_prior(np.ndarray): averange shape in shape (32, 32, 32)
+            k_prior(np.ndarray): averange shape in shape (1, 32, 32, 32)
         """
 
         # sample from the given category
@@ -160,14 +163,28 @@ class ShapeNetDataset(torch.utils.data.Dataset):
             category(string): the category
 
         Returns
-            full_priors(np.ndarray): the shape prior we want by [32,32,32]
+            full_prior(np.ndarray): the shape prior we want by [1, 32,32,32]
         """
 
         prior_dir = "data/prior"
 
-        full_priors = np.load(f"{prior_dir}/{category}.npy")
+        full_prior = np.expand_dims(np.load(f"{prior_dir}/{category}.npy"), axis=0)
 
-        return full_priors
+        return full_prior
+
+    def get_empty_prior(self, category):
+        """
+        Read the full prior computed in advanced from the whole training set.
+        Arg
+            category(string): the category, not used, just for keep format
+
+        Returns
+            empty_prior(np.ndarray): the shape prior by [1, 32,32,32] with all zero
+        """
+
+        empty_prior = np.zeros((1, 32, 32, 32))
+
+        return empty_prior
 
     def load_shape_as_dict(self):
         """
