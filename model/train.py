@@ -241,6 +241,12 @@ def train(
         # lr scheduler update
         scheduler.step()
 
+def iou(true_voxels, pred_voxels, threshold=0.4):
+    bool_true_voxels = true_voxels > threshold
+    bool_pred_voxels = pred_voxels > threshold
+    total_union = (bool_true_voxels | bool_pred_voxels).sum()
+    total_intersection = (bool_true_voxels & bool_pred_voxels).sum()
+    return total_intersection / total_union
 
 def test(
     model: Model,
@@ -260,91 +266,91 @@ def test(
     Retruns:
         tbd
     """
-    loss_criterion = torch.nn.CrossEntropyLoss()
-    loss_criterion.to(config["device"])
+    LossCE = torch.nn.CrossEntropyLoss()
+    LossCE.to(config["device"])
+    LossBCE = torch.nn.BCELoss()
+    LossBCE.to(config["device"])
 
     model.eval()
 
-    test_view_loss_running = 0.0
-    test_view_loss_class_running = 0.0
-    test_view_loss_3d_running = 0.0
-    test_shape_loss_running = 0.0
-    test_shape_loss_class_running = 0.0
-    test_shape_loss_3d_running = 0.0
+    test_view_loss = 0.0
+    test_view_loss_class = 0.0
+    test_view_loss_3d = 0.0
+    iou_view = 0.0
+    test_shape_loss = 0.0
+    test_shape_loss_class = 0.0
+    test_shape_loss_3d = 0.0
+    iou_shape = 0.0
+
     with torch.no_grad():
 
-        for epoch in range(config["max_epochs"]):
-            # test_view
-            for batch_idx, batch in enumerate(test_dataloader_view):
-                # Move batch to device
-                ShapeNetDataset.move_batch_to_device(batch, config["device"])
-                x1 = batch["class"]
-                x2 = batch["encoder"]
-                y1 = batch["GT"]
-                y2 = batch["3D"]
+        # test_view
+        for batch_idx, batch in enumerate(test_dataloader_view):
+            # Move batch to device
+            ShapeNetDataset.move_batch_to_device(batch, config["device"])
+            x1 = batch["class"]
+            x2 = batch["encoder"]
+            y1 = batch["GT"]
+            y2 = batch["3D"]
 
-                # Perform forward pass
-                pred_class, pred_3d = model(x1.float(), x2.float())
+            # Perform forward pass
+            pred_class, pred_3d = model(x1.float(), x2.float())
 
-                loss_class = loss_criterion(pred_class, y1)
-                loss_3d = loss_criterion(pred_3d, y2)
-                loss = loss_class + loss_3d
+            loss_class = LossCE(pred_class, y1)
+            loss_3d = LossBCE(pred_3d, y2)
+            loss = config["a"] * loss_class + config["b"] * loss_3d
 
-                # loss logging
-                test_view_loss_running += loss.item()
-                test_view_loss_class_running += loss_class.item()
-                test_view_loss_3d_running += loss_3d.item()
+            # loss logging
+            test_view_loss += loss.item()
+            test_view_loss_class += loss_class.item()
+            test_view_loss_3d += loss_3d.item()
+            
+            # Compute IoU
+            iou_view += iou(y2, pred_3d, threshold=0.4)
 
-            test_view_loss = test_view_loss_running / len(test_dataloader_view)
-            test_view_loss_class = test_view_loss_class_running / len(
-                test_dataloader_view
-            )
-            test_view_loss_3d = test_view_loss_3d_running / len(test_dataloader_view)
+        test_view_loss /= len(test_dataloader_view)
+        test_view_loss_class /= len(test_dataloader_view)
+        test_view_loss_3d /= len(test_dataloader_view)
+        iou_view /= len(test_dataloader_view)
 
-            print(f"[{epoch:03d}/{batch_idx:05d}] test_view_loss: {test_view_loss:.6f}")
-            print(
-                f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_class: {test_view_loss_class:.6f}"
-            )
-            print(
-                f"[{epoch:03d}/{batch_idx:05d}] test_view_loss_3d: {test_view_loss_3d:.6f}"
-            )
+        print(f"test_view_loss: {test_view_loss:.6f}")
+        print(f"test_view_loss_class: {test_view_loss_class:.6f}")
+        print(f"test_view_loss_3d: {test_view_loss_3d:.6f}")
+        print(f"IoU_view_test: {iou_view:.6f}")
 
-            # test_shape
-            for batch_idx, batch in enumerate(test_dataloader_shape):
-                # Move batch to device
-                ShapeNetDataset.move_batch_to_device(batch, config["device"])
-                x1 = batch["class"]
-                x2 = batch["encoder"]
-                y1 = batch["GT"]
-                y2 = batch["3D"]
+        # test_shape
+        for batch_idx, batch in enumerate(test_dataloader_shape):
+            # Move batch to device
+            ShapeNetDataset.move_batch_to_device(batch, config["device"])
+            x1 = batch["class"]
+            x2 = batch["encoder"]
+            y1 = batch["GT"]
+            y2 = batch["3D"]
 
-                # Perform forward pass
-                pred_class, pred_3d = model(x1.float(), x2.float())
+            # Perform forward pass
+            pred_class, pred_3d = model(x1.float(), x2.float())
 
-                loss_class = loss_criterion(pred_class, y1)
-                loss_3d = loss_criterion(pred_3d, y2)
-                loss = loss_class + loss_3d
+            loss_class = LossCE(pred_class, y1)
+            loss_3d = LossBCE(pred_3d, y2)
+            loss = config["a"] * loss_class + config["b"] * loss_3d
 
-                # loss logging
-                test_shape_loss_running += loss.item()
-                test_shape_loss_class_running += loss_class.item()
-                test_shape_loss_3d_running += loss_3d.item()
+            # loss logging
+            test_shape_loss += loss.item()
+            test_shape_loss_class += loss_class.item()
+            test_shape_loss += loss_3d.item()
 
-            test_shape_loss = test_shape_loss_running / len(test_dataloader_shape)
-            test_shape_loss_class = test_shape_loss_class_running / len(
-                test_dataloader_shape
-            )
-            test_shape_loss_3d = test_shape_loss_3d_running / len(test_dataloader_shape)
+            # Compute IoU
+            iou_shape += iou(y2, pred_3d, threshold=0.4)
 
-            print(
-                f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss: {test_shape_loss:.6f}"
-            )
-            print(
-                f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_class: {test_shape_loss_class:.6f}"
-            )
-            print(
-                f"[{epoch:03d}/{batch_idx:05d}] test_shape_loss_3d: {test_shape_loss_3d:.6f}"
-            )
+        test_shape_loss /= len(test_dataloader_shape)
+        test_shape_loss_class /= len(test_dataloader_shape)
+        test_shape_loss_3d /= len(test_dataloader_shape)
+        iou_shape /= len(test_dataloader_shape)
+
+        print(f"test_shape_loss: {test_shape_loss:.6f}")
+        print(f"test_shape_loss_class: {test_shape_loss_class:.6f}")
+        print(f"test_shape_loss_3d: {test_shape_loss_3d:.6f}")
+        print(f"IoU_shape: {iou_shape:.6f}")
 
 
 def main(model, config):
@@ -364,31 +370,31 @@ def main(model, config):
     """
 
     # create dataloaders
-    train_dataset = ShapeNetDataset("train", config["val_view"], config["test_view"])
-    train_dataloader = ShapeNetDataLoader(
-        train_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-        batch_size=config["batch_size"],  # The size of batches is defined here
-        shape_num=config["shape_num"],
-        shuffle=True,
-    )
+    # train_dataset = ShapeNetDataset("train", config["val_view"], config["test_view"])
+    # train_dataloader = ShapeNetDataLoader(
+    #     train_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    #     batch_size=config["batch_size"],  # The size of batches is defined here
+    #     shape_num=config["shape_num"],
+    #     shuffle=True,
+    # )
 
-    val_dataset_view = ShapeNetDataset(
-        "view_val", config["val_view"], config["test_view"]
-    )
-    val_dataloader_view = ShapeNetDataLoader(
-        val_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-        batch_size=config["batch_size"],  # The size of batches is defined here
-        shuffle=True,
-    )
+    # val_dataset_view = ShapeNetDataset(
+    #     "view_val", config["val_view"], config["test_view"]
+    # )
+    # val_dataloader_view = ShapeNetDataLoader(
+    #     val_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    #     batch_size=config["batch_size"],  # The size of batches is defined here
+    #     shuffle=True,
+    # )
 
-    val_dataset_shape = ShapeNetDataset(
-        "shape_val", config["val_view"], config["test_view"]
-    )
-    val_dataloader_shape = ShapeNetDataLoader(
-        val_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-        batch_size=config["batch_size"],  # The size of batches is defined here
-        shuffle=True,
-    )
+    # val_dataset_shape = ShapeNetDataset(
+    #     "shape_val", config["val_view"], config["test_view"]
+    # )
+    # val_dataloader_shape = ShapeNetDataLoader(
+    #     val_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    #     batch_size=config["batch_size"],  # The size of batches is defined here
+    #     shuffle=True,
+    # )
 
     test_dataset_view = ShapeNetDataset(
         "view_test", config["val_view"], config["test_view"]
@@ -396,6 +402,7 @@ def main(model, config):
     test_dataloader_view = ShapeNetDataLoader(
         test_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
     )
 
     test_dataset_shape = ShapeNetDataset(
@@ -404,6 +411,7 @@ def main(model, config):
     test_dataloader_shape = ShapeNetDataLoader(
         test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
         batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
     )
 
     # Move model to specified device
@@ -413,13 +421,13 @@ def main(model, config):
     Path(f'./runs/{config["experiment_name"]}').mkdir(exist_ok=True, parents=True)
 
     # Start training
-    train(
-        model,
-        train_dataloader,
-        val_dataloader_view,
-        val_dataloader_shape,
-        config,
-    )
+    # train(
+    #     model,
+    #     train_dataloader,
+    #     val_dataloader_view,
+    #     val_dataloader_shape,
+    #     config,
+    # )
 
     test(
         model,
