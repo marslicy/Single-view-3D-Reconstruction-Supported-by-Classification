@@ -39,8 +39,10 @@ def train(
                        'validate_every_n': print validation loss and validation accuracy every n iterations
     """
     # Train classification model
-    loss_criterion = torch.nn.CrossEntropyLoss()
-    loss_criterion.to(config["device"])
+    LossCE = torch.nn.CrossEntropyLoss()
+    LossCE.to(config["device"])
+    LossBCE = torch.nn.BCELoss()
+    LossBCE.to(config["device"])
 
     optimizer = torch.optim.Adam(model.parameters(), config["learning_rate"])
 
@@ -84,8 +86,8 @@ def train(
             # Perform forward pass
             pred_class, pred_3d = model(x1.float(), x2.float())
 
-            loss_class = loss_criterion(pred_class, y1)
-            loss_3d = loss_criterion(pred_3d, y2)
+            loss_class = LossCE(pred_class, y1)
+            loss_3d = LossBCE(pred_3d, y2)
             loss = config["a"] * loss_class + config["b"] * loss_3d
 
             # Backward
@@ -105,8 +107,12 @@ def train(
                 train_loss_3d = train_loss_3d_running / config["print_every_n"]
 
                 print(f"[{epoch:03d}/{batch_idx:05d}] train_loss: {train_loss:.6f}")
-                print(f"[{epoch:03d}/{batch_idx:05d}] train_loss_class: {train_loss_class:.6f}")
-                print(f"[{epoch:03d}/{batch_idx:05d}] train_loss_3d: {train_loss_3d:.6f}")
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] train_loss_class: {train_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] train_loss_3d: {train_loss_3d:.6f}"
+                )
 
                 writer.add_scalar(
                     "Training loss",
@@ -142,18 +148,24 @@ def train(
                     y2_val_v = batch_val_v["3D"]
 
                     with torch.no_grad():
-                        pred_class_val_v, pred_3d_val_v = model(x1_val_v.float(), x2_val_v.float())
+                        pred_class_val_v, pred_3d_val_v = model(
+                            x1_val_v.float(), x2_val_v.float()
+                        )
 
-                    loss_class_val_v = loss_criterion(pred_class_val_v, y1_val_v)
-                    loss_3d_val_v = loss_criterion(pred_3d_val_v, y2_val_v)
-                    loss_val_v = config["a"] * loss_class_val_v + config["b"] * loss_3d_val_v
+                    loss_class_val_v = LossCE(pred_class_val_v, y1_val_v)
+                    loss_3d_val_v = LossBCE(pred_3d_val_v, y2_val_v)
+                    loss_val_v = (
+                        config["a"] * loss_class_val_v + config["b"] * loss_3d_val_v
+                    )
 
                     val_view_loss_running += loss_val_v.item()
                     val_view_loss_class_running += loss_class_val_v.item()
                     val_view_loss_3d_running += loss_3d_val_v.item()
 
                 val_view_loss = val_view_loss_running / len(val_dataloader_view)
-                val_view_loss_class = val_view_loss_class_running / len(val_dataloader_view)
+                val_view_loss_class = val_view_loss_class_running / len(
+                    val_dataloader_view
+                )
                 val_view_loss_3d = val_view_loss_3d_running / len(val_dataloader_view)
                 if val_view_loss < view_best_loss:
                     torch.save(
@@ -161,9 +173,15 @@ def train(
                         f'./runs/{config["experiment_name"]}/val_view_model_best.ckpt',
                     )
                     view_best_loss = val_view_loss
-                print(f"[{epoch:03d}/{batch_idx:05d}] val_view_loss: {val_view_loss:.6f} | view_best_loss: {view_best_loss:.6f}")
-                print(f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_class: {val_view_loss_class:.6f}")
-                print(f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_3d: {val_view_loss_3d:.6f}")
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss: {val_view_loss:.6f} | view_best_loss: {view_best_loss:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_class: {val_view_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_view_loss_3d: {val_view_loss_3d:.6f}"
+                )
                 val_view_loss_running = 0.0
                 val_view_loss_class_running = 0.0
                 val_view_loss_3d_running = 0.0
@@ -178,28 +196,42 @@ def train(
                     y2_val_s = batch_val_s["3D"]
 
                     with torch.no_grad():
-                        pred_class_val_s, pred_3d_val_s = model(x1_val_s.float(), x2_val_s.float())
+                        pred_class_val_s, pred_3d_val_s = model(
+                            x1_val_s.float(), x2_val_s.float()
+                        )
 
-                    loss_class_val_s = loss_criterion(pred_class_val_s, y1_val_s)
-                    loss_3d_val_s = loss_criterion(pred_3d_val_s, y2_val_s)
-                    loss_val_s = config["a"] * loss_class_val_s + config["b"] * loss_3d_val_s
+                    loss_class_val_s = LossCE(pred_class_val_s, y1_val_s)
+                    loss_3d_val_s = LossBCE(pred_3d_val_s, y2_val_s)
+                    loss_val_s = (
+                        config["a"] * loss_class_val_s + config["b"] * loss_3d_val_s
+                    )
 
                     val_shape_loss_running += loss_val_s.item()
                     val_shape_loss_class_running += loss_class_val_s.item()
                     val_shape_loss_3d_running += loss_3d_val_s.item()
 
                 val_shape_loss = val_shape_loss_running / len(val_dataloader_shape)
-                val_shape_loss_class = val_shape_loss_class_running / len(val_dataloader_shape)
-                val_shape_loss_3d = val_shape_loss_3d_running / len(val_dataloader_shape)
+                val_shape_loss_class = val_shape_loss_class_running / len(
+                    val_dataloader_shape
+                )
+                val_shape_loss_3d = val_shape_loss_3d_running / len(
+                    val_dataloader_shape
+                )
                 if val_shape_loss < shape_best_loss:
                     torch.save(
                         model.state_dict(),
                         f'./runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
                     )
                     shape_best_loss = val_shape_loss
-                print(f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss: {val_shape_loss:.6f} | shape_best_loss: {shape_best_loss:.6f}")
-                print(f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_class: {val_shape_loss_class:.6f}")
-                print(f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_3d: {val_shape_loss_3d:.6f}")
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss: {val_shape_loss:.6f} | shape_best_loss: {shape_best_loss:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_class: {val_shape_loss_class:.6f}"
+                )
+                print(
+                    f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss_3d: {val_shape_loss_3d:.6f}"
+                )
                 val_shape_loss_running = 0.0
                 val_shape_loss_class_running = 0.0
                 val_shape_loss_3d_running = 0.0
@@ -315,7 +347,7 @@ def test(
             )
 
 
-def main(model,config):
+def main(model, config):
     """
     Function for training DeepSDF
         config (Dict): configuration for training - has the following keys
@@ -395,5 +427,5 @@ def main(model,config):
         test_dataloader_shape,
         config,
     )
-    
+
     return model

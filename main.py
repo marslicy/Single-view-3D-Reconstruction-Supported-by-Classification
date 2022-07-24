@@ -32,7 +32,7 @@ if __name__ == "__main__":
         "shape_num": 3,
         "a": 0.5,
         "b": 1,
-        "global_feature_size": 512,
+        "global_feature_size": 128,
         "local_feature_size": 128,
         "num_class": 13,
     }
@@ -40,13 +40,11 @@ if __name__ == "__main__":
         config["device"] = "cuda"
     print("Using device:", config["device"])
 
-    # Instantiate model
+    # # Instantiate model
     model = Model(
         config["global_feature_size"], config["local_feature_size"], config["num_class"]
     )
-    model.set_pretrain(pretrain=True)
+    # model.set_pretrain(pretrain=True)
 
     # pretraining
-    config["a"] = 1
-    config["b"] = 0
     model = main(model, config)
