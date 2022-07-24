@@ -184,12 +184,10 @@ def test(
                 input_voxels = model(input_voxels, input_images)
             pred_test = input_voxels.squeeze(1)
 
-            loss_test_running = loss_criterion(pred_test, target_voxels)
-            loss_test += loss_test_running
+            loss_test += loss_criterion(pred_test, target_voxels)
 
             # Compute IoU
-            iou_running = iou(target_voxels, pred_test, threshold=0.4)
-            iou_test += iou_running
+            iou_test += iou(target_voxels, pred_test, threshold=0.4)
 
         loss_test /= len(test_dataloader)
         iou_test /= len(test_dataloader)
