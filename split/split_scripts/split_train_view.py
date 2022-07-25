@@ -2,7 +2,7 @@ import imageio
 
 from configs.path import imgroot
 
-with open("split/train_shape.txt") as file:
+with open("split/train_shape_v2.txt") as file:
     lines = []
     for line in file:
         lines.append(line.rstrip())
