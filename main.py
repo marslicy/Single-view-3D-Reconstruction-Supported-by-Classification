@@ -26,13 +26,12 @@ if __name__ == "__main__":
         "batch_size": 128,
         "resume_ckpt": None,
         "learning_rate": 0.001,
-        "max_epochs": 20,
+        "max_epochs": 150,
         "print_every_n": 100,
-        "validate_every_n": 1000,
+        "validate_every_n": 200,
         "val_view": 1,
         "test_view": 1,
-        "shape_num": 5,
-        "test_shape_num": 1,
+        "shape_num": 1,
         "a": 1,
         "b": 1,
         "global_feature_size": 128,
@@ -42,6 +41,11 @@ if __name__ == "__main__":
     if torch.cuda.is_available():
         config["device"] = "cuda"
     print("Using device:", config["device"])
+
+    # for training
+    config["a"] = 0.5
+    config["b"] = 1
+    config["experiment_name"] = "a0.5b1"
 
     model = Model(
         config["global_feature_size"], config["local_feature_size"], config["num_class"]
@@ -57,6 +61,17 @@ if __name__ == "__main__":
     )
     model = main(model, config)
 
+    config["a"] = 1
+    config["b"] = 1
+    config["experiment_name"] = "a1b1"
+
+    model = Model(
+        config["global_feature_size"], config["local_feature_size"], config["num_class"]
+    )
+    model = main(model, config)
+    # end training
+
+    # for test
     test_dataset_view = ShapeNetDataset(
         "view_test", config["val_view"], config["test_view"]
     )
@@ -71,7 +86,6 @@ if __name__ == "__main__":
     )
     test_dataloader_shape = ShapeNetDataLoader(
         test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-        shape_num=config["test_shape_num"],
         batch_size=config["batch_size"],  # The size of batches is defined here
         shuffle=True,
     )
@@ -91,3 +105,4 @@ if __name__ == "__main__":
         test_dataloader_shape,
         config,
     )
+    # end test

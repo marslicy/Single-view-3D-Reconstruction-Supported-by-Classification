@@ -1,5 +1,4 @@
 from datetime import datetime
-from pathlib import Path
 from typing import Dict
 
 import torch
@@ -172,7 +171,7 @@ def train(
                 if val_view_loss < view_best_loss:
                     torch.save(
                         model.state_dict(),
-                        f'./runs/{config["experiment_name"]}/val_view_model_best.ckpt',
+                        f'./runs/{dt_string}-{config["experiment_name"]}/val_view_model_best.ckpt',
                     )
                     view_best_loss = val_view_loss
                 print(
@@ -222,15 +221,15 @@ def train(
                 if val_shape_loss_3d < shape_best_loss:
                     torch.save(
                         model.state_dict(),
-                        f'./runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
+                        f'./runs/{dt_string}-{config["experiment_name"]}/val_shape_model_best.ckpt',
                     )
                     shape_best_loss = val_shape_loss_3d
-                if val_shape_loss_3d < last_loss:
+                if val_shape_loss_3d > last_loss:
                     trigger_times += 1
                     if trigger_times >= patience:
                         return model
                 else:
-                    trigger_times = 0.0
+                    trigger_times = 0
                 last_loss = val_shape_loss_3d
 
                 print(
@@ -304,8 +303,6 @@ def test(
             x2 = batch["encoder"]
             y1 = batch["GT"]
             y2 = batch["3D"]
-
-            assert x1 == x2
 
             # Perform forward pass
             pred_class, pred_3d = model(x1.float(), x2.float())
@@ -424,16 +421,12 @@ def main(model, config):
     )
     test_dataloader_shape = ShapeNetDataLoader(
         test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-        shape_num=config["test_shape_num"],
         batch_size=config["batch_size"],  # The size of batches is defined here
         shuffle=True,
     )
 
     # Move model to specified device
     model.to(config["device"])
-
-    # Create folder for saving checkpoints
-    Path(f'./runs/{config["experiment_name"]}').mkdir(exist_ok=True, parents=True)
 
     # Start training
     train(

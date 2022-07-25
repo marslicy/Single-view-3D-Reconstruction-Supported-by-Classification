@@ -41,6 +41,8 @@ class ShapeNetDataLoader(DataLoader):
             self.shape_num = self.val_view
         elif self.split == "view_test":
             self.shape_num = self.test_view
+        elif self.split == "shape_test" or self.split == "shape_val":
+            self.shape_num = 1
 
     def __iter__(self):
         def combine_batch_dicts(batch):

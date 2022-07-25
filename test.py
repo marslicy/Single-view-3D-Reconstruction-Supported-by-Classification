@@ -1,7 +1,6 @@
 # %%
 # import here
 import torch
-from cv2 import DRAW_MATCHES_FLAGS_DEFAULT
 
 from data.shapenet import ShapeNetDataset
 from data.shapenet_loader import ShapeNetDataLoader
@@ -115,4 +114,57 @@ train.test(
     test_dataloader_shape,
     config,
 )
+import torch
+
+# %%
+from data.shapenet import ShapeNetDataset
+from data.shapenet_loader import ShapeNetDataLoader
+
+config = {
+    "experiment_name": "a1b1",
+    "device": "cpu",  # or 'cuda:0 cpu'
+    "batch_size": 128,
+    "resume_ckpt": None,
+    "learning_rate": 0.001,
+    "max_epochs": 150,
+    "print_every_n": 100,
+    "validate_every_n": 200,
+    "val_view": 1,
+    "test_view": 1,
+    "shape_num": 1,
+    "a": 1,
+    "b": 1,
+    "global_feature_size": 128,
+    "local_feature_size": 128,
+    "num_class": 13,
+}
+
+test_dataset_view = ShapeNetDataset(
+    "view_test", config["val_view"], config["test_view"]
+)
+test_dataloader_view = ShapeNetDataLoader(
+    test_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    batch_size=config["batch_size"],  # The size of batches is defined here
+    shuffle=True,
+)
+
+test_dataset_shape = ShapeNetDataset(
+    "shape_test", config["val_view"], config["test_view"]
+)
+test_dataloader_shape = ShapeNetDataLoader(
+    test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    batch_size=config["batch_size"],  # The size of batches is defined here
+    shuffle=True,
+)
+for batch_idx, batch in enumerate(test_dataloader_shape):
+    # Move batch to device
+    ShapeNetDataset.move_batch_to_device(batch, config["device"])
+    x1 = batch["class"]
+    x2 = batch["encoder"]
+    y1 = batch["GT"]
+    y2 = batch["3D"]
+
+    print(torch.eq(x1, x2))
+    break
+
 # %%
