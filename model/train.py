@@ -69,8 +69,7 @@ def train(
     val_shape_loss_3d_running = 0.0
     view_best_loss = float("inf")
     shape_best_loss = float("inf")
-    iteration = 0
-    last_loss = 999.0
+    last_loss = float("inf")
     patience = 3
     trigger_times = 0
 
@@ -102,7 +101,7 @@ def train(
             train_loss_class_running += loss_class.item()
             train_loss_3d_running += loss_3d.item()
 
-            iteration += 1
+            iteration = epoch * len(train_dataloader) + batch_idx
 
             if iteration % config["print_every_n"] == (config["print_every_n"] - 1):
                 train_loss = train_loss_running / config["print_every_n"]
@@ -305,6 +304,8 @@ def test(
             x2 = batch["encoder"]
             y1 = batch["GT"]
             y2 = batch["3D"]
+
+            assert x1 == x2
 
             # Perform forward pass
             pred_class, pred_3d = model(x1.float(), x2.float())

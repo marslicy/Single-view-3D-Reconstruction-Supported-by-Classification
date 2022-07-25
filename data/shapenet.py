@@ -36,7 +36,6 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         # keep track of shapes based on split, while view_val and view_test uses train split
         if split in ["train", "shape_val", "shape_test"]:
             self.items = Path(f"split/{split}.txt").read_text().splitlines()
-            print(Path(f"split/{split}.txt"))
         else:
             self.items = Path("split/train.txt").read_text().splitlines()
             if split == "view_test":
