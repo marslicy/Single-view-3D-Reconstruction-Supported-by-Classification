@@ -70,6 +70,9 @@ def train(
     view_best_loss = float("inf")
     shape_best_loss = float("inf")
     iteration = 0
+    last_loss = 999.0
+    patience = 3
+    trigger_times = 0
 
     for epoch in range(config["max_epochs"]):
 
@@ -217,12 +220,20 @@ def train(
                 val_shape_loss_3d = val_shape_loss_3d_running / len(
                     val_dataloader_shape
                 )
-                if val_shape_loss < shape_best_loss:
+                if val_shape_loss_3d < shape_best_loss:
                     torch.save(
                         model.state_dict(),
                         f'./runs/{config["experiment_name"]}/val_shape_model_best.ckpt',
                     )
-                    shape_best_loss = val_shape_loss
+                    shape_best_loss = val_shape_loss_3d
+                if val_shape_loss_3d < last_loss:
+                    trigger_times += 1
+                    if trigger_times >= patience:
+                        return model
+                else:
+                    trigger_times = 0.0
+                last_loss = val_shape_loss_3d
+
                 print(
                     f"[{epoch:03d}/{batch_idx:05d}] val_shape_loss: {val_shape_loss:.6f} | shape_best_loss: {shape_best_loss:.6f}"
                 )
@@ -241,12 +252,14 @@ def train(
         # lr scheduler update
         scheduler.step()
 
+
 def iou(true_voxels, pred_voxels, threshold=0.4):
     bool_true_voxels = true_voxels > threshold
     bool_pred_voxels = pred_voxels > threshold
     total_union = (bool_true_voxels | bool_pred_voxels).sum()
     total_intersection = (bool_true_voxels & bool_pred_voxels).sum()
     return total_intersection / total_union
+
 
 def test(
     model: Model,
@@ -304,7 +317,7 @@ def test(
             test_view_loss += loss.item()
             test_view_loss_class += loss_class.item()
             test_view_loss_3d += loss_3d.item()
-            
+
             # Compute IoU
             iou_view += iou(y2, pred_3d, threshold=0.4)
 
@@ -370,31 +383,31 @@ def main(model, config):
     """
 
     # create dataloaders
-    # train_dataset = ShapeNetDataset("train", config["val_view"], config["test_view"])
-    # train_dataloader = ShapeNetDataLoader(
-    #     train_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-    #     batch_size=config["batch_size"],  # The size of batches is defined here
-    #     shape_num=config["shape_num"],
-    #     shuffle=True,
-    # )
+    train_dataset = ShapeNetDataset("train", config["val_view"], config["test_view"])
+    train_dataloader = ShapeNetDataLoader(
+        train_dataset,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        batch_size=config["batch_size"],  # The size of batches is defined here
+        shape_num=config["shape_num"],
+        shuffle=True,
+    )
 
-    # val_dataset_view = ShapeNetDataset(
-    #     "view_val", config["val_view"], config["test_view"]
-    # )
-    # val_dataloader_view = ShapeNetDataLoader(
-    #     val_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-    #     batch_size=config["batch_size"],  # The size of batches is defined here
-    #     shuffle=True,
-    # )
+    val_dataset_view = ShapeNetDataset(
+        "view_val", config["val_view"], config["test_view"]
+    )
+    val_dataloader_view = ShapeNetDataLoader(
+        val_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
+    )
 
-    # val_dataset_shape = ShapeNetDataset(
-    #     "shape_val", config["val_view"], config["test_view"]
-    # )
-    # val_dataloader_shape = ShapeNetDataLoader(
-    #     val_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
-    #     batch_size=config["batch_size"],  # The size of batches is defined here
-    #     shuffle=True,
-    # )
+    val_dataset_shape = ShapeNetDataset(
+        "shape_val", config["val_view"], config["test_view"]
+    )
+    val_dataloader_shape = ShapeNetDataLoader(
+        val_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
+    )
 
     test_dataset_view = ShapeNetDataset(
         "view_test", config["val_view"], config["test_view"]
@@ -421,13 +434,13 @@ def main(model, config):
     Path(f'./runs/{config["experiment_name"]}').mkdir(exist_ok=True, parents=True)
 
     # Start training
-    # train(
-    #     model,
-    #     train_dataloader,
-    #     val_dataloader_view,
-    #     val_dataloader_shape,
-    #     config,
-    # )
+    train(
+        model,
+        train_dataloader,
+        val_dataloader_view,
+        val_dataloader_shape,
+        config,
+    )
 
     test(
         model,

@@ -19,18 +19,18 @@ if __name__ == "__main__":
     """
 
     config = {
-        "experiment_name": "classification pretrain",
+        "experiment_name": "a1b1",
         "device": "cuda:0",  # or 'cuda:0 cpu'
         "batch_size": 150,
         "resume_ckpt": None,
         "learning_rate": 0.001,
-        "max_epochs": 50,
+        "max_epochs": 20,
         "print_every_n": 100,
         "validate_every_n": 1000,
         "val_view": 1,
         "test_view": 1,
         "shape_num": 3,
-        "a": 0.5,
+        "a": 1,
         "b": 1,
         "global_feature_size": 128,
         "local_feature_size": 128,
@@ -40,11 +40,16 @@ if __name__ == "__main__":
         config["device"] = "cuda"
     print("Using device:", config["device"])
 
-    # # Instantiate model
     model = Model(
         config["global_feature_size"], config["local_feature_size"], config["num_class"]
     )
-    # model.set_pretrain(pretrain=True)
+    model = main(model, config)
 
-    # pretraining
+    config["a"] = 0.1
+    config["b"] = 1
+    config["experiment_name"] = "a0.1b1"
+
+    model = Model(
+        config["global_feature_size"], config["local_feature_size"], config["num_class"]
+    )
     model = main(model, config)
