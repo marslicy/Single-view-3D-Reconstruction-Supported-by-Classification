@@ -22,7 +22,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
     def __init__(self, split, val_view=2, test_view=2):
         """
-        :param split: one of 'train', 'view_val', 'shape_val', 'view_test', 'test_shape' - for training, validation or overfitting split
+        :param split: one of 'train', 'view_val', 'shape_val', 'view_test', 'shape_test' - for training, validation or overfitting split
         """
         super().__init__()
         assert split in [
@@ -36,6 +36,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         # keep track of shapes based on split, while view_val and view_test uses train split
         if split in ["train", "shape_val", "shape_test"]:
             self.items = Path(f"split/{split}.txt").read_text().splitlines()
+            print(Path(f"split/{split}.txt"))
         else:
             self.items = Path("split/train.txt").read_text().splitlines()
             if split == "view_test":

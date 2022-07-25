@@ -1,7 +1,9 @@
 import torch
 
+from data.shapenet import ShapeNetDataset
+from data.shapenet_loader import ShapeNetDataLoader
 from model.model import Model
-from model.train import main
+from model.train import main, test
 
 if __name__ == "__main__":
     """
@@ -29,7 +31,8 @@ if __name__ == "__main__":
         "validate_every_n": 1000,
         "val_view": 1,
         "test_view": 1,
-        "shape_num": 3,
+        "shape_num": 5,
+        "test_shape_num": 1,
         "a": 1,
         "b": 1,
         "global_feature_size": 128,
@@ -53,3 +56,38 @@ if __name__ == "__main__":
         config["global_feature_size"], config["local_feature_size"], config["num_class"]
     )
     model = main(model, config)
+
+    test_dataset_view = ShapeNetDataset(
+        "view_test", config["val_view"], config["test_view"]
+    )
+    test_dataloader_view = ShapeNetDataLoader(
+        test_dataset_view,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
+    )
+
+    test_dataset_shape = ShapeNetDataset(
+        "shape_test", config["val_view"], config["test_view"]
+    )
+    test_dataloader_shape = ShapeNetDataLoader(
+        test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        shape_num=config["test_shape_num"],
+        batch_size=config["batch_size"],  # The size of batches is defined here
+        shuffle=True,
+    )
+
+    model = Model(
+        config["global_feature_size"], config["local_feature_size"], config["num_class"]
+    )
+    model.load_state_dict(torch.load("./runs/a0.5b1/val_shape_model_best.ckpt"))
+    model = model.to(config["device"])
+
+    config["a"] = 0.5
+    config["b"] = 1
+
+    test(
+        model,
+        test_dataloader_view,
+        test_dataloader_shape,
+        config,
+    )

@@ -350,7 +350,7 @@ def test(
             # loss logging
             test_shape_loss += loss.item()
             test_shape_loss_class += loss_class.item()
-            test_shape_loss += loss_3d.item()
+            test_shape_loss_3d += loss_3d.item()
 
             # Compute IoU
             iou_shape += iou(y2, pred_3d, threshold=0.4)
@@ -423,6 +423,7 @@ def main(model, config):
     )
     test_dataloader_shape = ShapeNetDataLoader(
         test_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+        shape_num=config["test_shape_num"],
         batch_size=config["batch_size"],  # The size of batches is defined here
         shuffle=True,
     )
