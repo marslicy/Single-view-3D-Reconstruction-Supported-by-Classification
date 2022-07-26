@@ -36,9 +36,9 @@ def train(
                        'print_every_n': print train loss every n iterations
                        'validate_every_n': print validation loss and validation accuracy every n iterations
     """
-    #early stop
+    # early stop
     last_loss = 100
-    patience = 3
+    patience = 10
     trigger_times = 0
 
     loss_criterion = torch.nn.BCELoss()
@@ -113,12 +113,12 @@ def train(
 
                 loss_val /= len(val_dataloader)
 
-                #early stop
+                # early stop
                 if loss_val > last_loss:
                     trigger_times += 1
 
                     if trigger_times >= patience:
-                        print('Early stopping!')
+                        print("Early stopping!")
                         return model
 
                 else:

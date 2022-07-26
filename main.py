@@ -18,14 +18,16 @@ if __name__ == "__main__":
                     'test_view'
     """
 
+    experiment_prefix = "13_class_lr_001"
+
     config = {
-        "experiment_name": "full_prior_1_iter",
+        "experiment_name": f"{experiment_prefix}full_prior_1_iter",
         "device": "cpu",  # or 'cuda:0'
         "batch_size": 128,
         "prior_k": "full",
         "iter": 1,
         "resume_ckpt": None,
-        "learning_rate": 0.1,
+        "learning_rate": 0.01,
         "max_epochs": 100,
         "print_every_n": 100,
         "validate_every_n": 200,
@@ -34,25 +36,25 @@ if __name__ == "__main__":
         config["device"] = "cuda:0"
     print("Using device:", config["device"])
 
-    print("full_prior_1_iter")
+    print(f"{experiment_prefix}full_prior_1_iter")
     model = Model()
     model = main(model, config)
 
-    print("empty_prior_1_iter")
+    print(f"{experiment_prefix}empty_prior_1_iter")
     config["prior_k"] = 0
-    config["experiment_name"] = "empty_prior_1_iter"
+    config["experiment_name"] = f"{experiment_prefix}empty_prior_1_iter"
     model = Model()
     model = main(model, config)
 
-    print("1_prior_1_iter")
+    print(f"{experiment_prefix}1_prior_1_iter")
     config["prior_k"] = 1
-    config["experiment_name"] = "1_prior_1_iter"
+    config["experiment_name"] = f"{experiment_prefix}1_prior_1_iter"
     model = Model()
     model = main(model, config)
 
-    print("1_prior_2_iter")
+    print(f"{experiment_prefix}1_prior_2_iter")
     config["iter"] = 2
     config["prior_k"] = 1
-    config["experiment_name"] = "1_prior_2_iter"
+    config["experiment_name"] = f"{experiment_prefix}1_prior_2_iter"
     model = Model()
     model = main(model, config)
