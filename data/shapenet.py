@@ -71,7 +71,7 @@ class ShapeNetDataset(torch.utils.data.Dataset):
         elif self.split in ["view_val", "view_test"]:
             idx = next(self.img_counter)
             enc_img = self.get_image_by_idx(item, idx)
-            cls_img = self.get_image_by_idx(item, idx)
+            cls_img = enc_img
 
         return {
             "class": cls_img,
