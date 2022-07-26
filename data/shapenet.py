@@ -65,9 +65,12 @@ class ShapeNetDataset(torch.utils.data.Dataset):
 
         # implement the different geting logic here
 
-        if self.split in ["train", "shape_val", "shape_test"]:
+        if self.split in ["train"]:
             enc_img = self.get_image_data(item)
             cls_img = self.get_image_data(item)
+        elif self.split in ["shape_val", "shape_test"]:
+            enc_img = self.get_image_data(item)
+            cls_img = enc_img
         elif self.split in ["view_val", "view_test"]:
             idx = next(self.img_counter)
             enc_img = self.get_image_by_idx(item, idx)

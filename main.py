@@ -23,7 +23,7 @@ if __name__ == "__main__":
     config = {
         "experiment_name": "a1b1",
         "device": "cuda:0",  # or 'cuda:0 cpu'
-        "batch_size": 128,
+        "batch_size": 64,
         "resume_ckpt": None,
         "learning_rate": 0.001,
         "max_epochs": 150,
