@@ -168,3 +168,16 @@ for batch_idx, batch in enumerate(test_dataloader_shape):
     break
 
 # %%
+val_dataset_shape = ShapeNetDataset("shape_val", 1, 1)
+val_dataloader_shape = ShapeNetDataLoader(
+    val_dataset_shape,  # Datasets return data one sample at a time; Dataloaders use them and aggregate samples into batches
+    batch_size=12,  # The size of batches is defined here
+    shuffle=True,
+)
+for batch in val_dataloader_shape:
+    x1 = batch["class"]
+    x2 = batch["encoder"]
+    y1 = batch["GT"]
+    y2 = batch["3D"]
+    print(torch.eq(x1, x2).all())
+# %%

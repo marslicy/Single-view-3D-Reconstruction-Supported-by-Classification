@@ -78,14 +78,14 @@ def train(
             # Move batch to device
             ShapeNetDataset.move_batch_to_device(batch, config["device"])
             x1 = batch["class"]
-            x2 = batch["encoder"]
+            # x2 = batch["encoder"]
             y1 = batch["GT"]
             y2 = batch["3D"]
 
             optimizer.zero_grad()
 
             # Perform forward pass
-            pred_class, pred_3d = model(x1.float(), x2.float())
+            pred_class, pred_3d = model(x1.float(), x1.float())
 
             loss_class = LossCE(pred_class, y1)
             loss_3d = LossBCE(pred_3d, y2)
@@ -163,11 +163,11 @@ def train(
                     val_view_loss_class_running += loss_class_val_v.item()
                     val_view_loss_3d_running += loss_3d_val_v.item()
 
-                val_view_loss = val_view_loss_running / len(val_dataloader_view)
-                val_view_loss_class = val_view_loss_class_running / len(
-                    val_dataloader_view
+                val_view_loss = val_view_loss_running / (batch_idx_val_v + 1)
+                val_view_loss_class = val_view_loss_class_running / (
+                    batch_idx_val_v + 1
                 )
-                val_view_loss_3d = val_view_loss_3d_running / len(val_dataloader_view)
+                val_view_loss_3d = val_view_loss_3d_running / (batch_idx_val_v + 1)
                 if val_view_loss < view_best_loss:
                     torch.save(
                         model.state_dict(),
@@ -211,13 +211,11 @@ def train(
                     val_shape_loss_class_running += loss_class_val_s.item()
                     val_shape_loss_3d_running += loss_3d_val_s.item()
 
-                val_shape_loss = val_shape_loss_running / len(val_dataloader_shape)
-                val_shape_loss_class = val_shape_loss_class_running / len(
-                    val_dataloader_shape
+                val_shape_loss = val_shape_loss_running / (batch_idx_val_s + 1)
+                val_shape_loss_class = val_shape_loss_class_running / (
+                    batch_idx_val_s + 1
                 )
-                val_shape_loss_3d = val_shape_loss_3d_running / len(
-                    val_dataloader_shape
-                )
+                val_shape_loss_3d = val_shape_loss_3d_running / (batch_idx_val_s + 1)
                 if val_shape_loss_3d < shape_best_loss:
                     torch.save(
                         model.state_dict(),
@@ -227,6 +225,11 @@ def train(
                 if val_shape_loss_3d > last_loss:
                     trigger_times += 1
                     if trigger_times >= patience:
+                        model.load_state_dict(
+                            torch.load(
+                                f'./runs/{dt_string}-{config["experiment_name"]}/val_shape_model_best.ckpt'
+                            )
+                        )
                         return model
                 else:
                     trigger_times = 0
@@ -249,6 +252,13 @@ def train(
 
         # lr scheduler update
         scheduler.step()
+
+    model.load_state_dict(
+        torch.load(
+            f'./runs/{dt_string}-{config["experiment_name"]}/val_shape_model_best.ckpt'
+        )
+    )
+    return model
 
 
 def iou(true_voxels, pred_voxels, threshold=0.4):
@@ -429,7 +439,7 @@ def main(model, config):
     model.to(config["device"])
 
     # Start training
-    train(
+    model = train(
         model,
         train_dataloader,
         val_dataloader_view,

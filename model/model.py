@@ -37,7 +37,7 @@ class Model(nn.Module):
             nn.LeakyReLU(negative_slope=0.01),
             nn.BatchNorm2d(256),
             View((-1, 256)),
-            nn.Linear(in_features=256, out_features=128),
+            nn.Linear(in_features=256, out_features=global_feature_size),
             nn.ReLU(),
         )
         self.view_enc = nn.Sequential(
@@ -62,12 +62,15 @@ class Model(nn.Module):
             nn.LeakyReLU(negative_slope=0.01),
             nn.BatchNorm2d(256),
             View((-1, 256)),
-            nn.Linear(in_features=256, out_features=128),
+            nn.Linear(in_features=256, out_features=local_feature_size),
             nn.ReLU(),
         )
 
         self.shape_dec = nn.Sequential(
-            nn.Linear(in_features=128, out_features=8192),
+            nn.Linear(
+                in_features=global_feature_size + local_feature_size, out_features=8192
+            ),
+            # nn.Linear(in_features=global_feature_size, out_features=8192),
             nn.ReLU(),
             View((-1, 128, 4, 4, 4)),
             ConvTranspose3dSame(
@@ -95,7 +98,7 @@ class Model(nn.Module):
         )
 
         self.class_dec = nn.Sequential(  # might need to be modified
-            nn.Linear(in_features=128, out_features=128),
+            nn.Linear(in_features=global_feature_size, out_features=128),
             nn.ReLU(),
             nn.BatchNorm1d(128),
             nn.Linear(in_features=128, out_features=64),
@@ -104,9 +107,9 @@ class Model(nn.Module):
             nn.Linear(in_features=64, out_features=32),
             nn.ReLU(),
             nn.BatchNorm1d(32),
-            nn.Linear(in_features=32, out_features=13),
+            nn.Linear(in_features=32, out_features=num_class),
             nn.ReLU(),
-            nn.BatchNorm1d(13),
+            nn.BatchNorm1d(num_class),
         )
 
     def forward(self, x_in_class: torch.Tensor, x_in_3d: torch.Tensor):
@@ -125,7 +128,8 @@ class Model(nn.Module):
         class_emb = self.class_enc(x_in_class)
         view_emb = self.view_enc(x_in_3d)
         pred_class = self.class_dec(class_emb)
-        pred_3d = self.shape_dec(class_emb + view_emb).squeeze(1)
+        pred_3d = self.shape_dec(torch.cat([class_emb, view_emb], dim=1)).squeeze(1)
+        # pred_3d = self.shape_dec(class_emb + view_emb).squeeze(1)
         return pred_class, pred_3d
 
 

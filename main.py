@@ -22,20 +22,20 @@ if __name__ == "__main__":
 
     config = {
         "experiment_name": "a1b1",
-        "device": "cuda:0",  # or 'cuda:0 cpu'
-        "batch_size": 64,
+        "device": "cpu",  # or 'cpu'
+        "batch_size": 128,
         "resume_ckpt": None,
         "learning_rate": 0.001,
         "max_epochs": 150,
         "print_every_n": 100,
-        "validate_every_n": 200,
+        "validate_every_n": 1000,
         "val_view": 1,
         "test_view": 1,
         "shape_num": 1,
         "a": 1,
         "b": 1,
-        "global_feature_size": 128,
-        "local_feature_size": 128,
+        "global_feature_size": 256,
+        "local_feature_size": 256,
         "num_class": 13,
     }
     if torch.cuda.is_available():
@@ -43,32 +43,15 @@ if __name__ == "__main__":
     print("Using device:", config["device"])
 
     # for training
-    config["a"] = 0.5
+    config["a"] = 0.05
     config["b"] = 1
-    config["experiment_name"] = "a0.5b1"
+    config["experiment_name"] = "256_cat_same_a0.05b1"
 
     model = Model(
         config["global_feature_size"], config["local_feature_size"], config["num_class"]
     )
     model = main(model, config)
 
-    config["a"] = 0.1
-    config["b"] = 1
-    config["experiment_name"] = "a0.1b1"
-
-    model = Model(
-        config["global_feature_size"], config["local_feature_size"], config["num_class"]
-    )
-    model = main(model, config)
-
-    config["a"] = 1
-    config["b"] = 1
-    config["experiment_name"] = "a1b1"
-
-    model = Model(
-        config["global_feature_size"], config["local_feature_size"], config["num_class"]
-    )
-    model = main(model, config)
     # end training
 
     # for test
@@ -90,13 +73,18 @@ if __name__ == "__main__":
         shuffle=True,
     )
 
+    config["global_feature_size"] = 128
+    config["local_feature_size"] = 128
+
     model = Model(
         config["global_feature_size"], config["local_feature_size"], config["num_class"]
     )
-    model.load_state_dict(torch.load("./runs/a0.5b1/val_shape_model_best.ckpt"))
+    model.load_state_dict(
+        torch.load("./runs/07-26-18-29-same_a0.05b1/val_shape_model_best.ckpt")
+    )
     model = model.to(config["device"])
 
-    config["a"] = 0.5
+    config["a"] = 0.05
     config["b"] = 1
 
     test(
