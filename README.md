@@ -20,7 +20,3 @@ Plase read the `report.pdf` for more details.
 ## Important Files
 
 - `main.py`: set up the main parameters and the code for testing model
-
-## Network structure
-
-![1679568034374](image/README/1679568034374.png)
